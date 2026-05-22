@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>格式化数据展示 - Nord Theme</title>
+    <style>
+        /* --- Nord Theme Color Palette --- */
+        :root {
+            --nord0: #2e3440;
+            /* Background */
+            --nord1: #3b4252;
+            /* Card BG / Selection */
+            --nord2: #434c5e;
+            /* Borders / Highlights */
+            --nord3: #4c566a;
+            /* Comments */
+            --nord4: #d8dee9;
+            /* Foreground */
+            --nord5: #e5e9f0;
+            /* Light Foreground */
+            --nord6: #eceff4;
+            /* Bold Foreground */
+            --nord7: #8fbcbb;
+            /* Cyan - Primary Accent */
+            --nord8: #88c0d0;
+            /* Ice - Secondary Accent */
+            --nord9: #81a1c1;
+            /* Blue */
+            --nord10: #5e81ac;
+            /* Dark Blue */
+            --nord11: #bf616a;
+            /* Red */
+            --nord12: #d08770;
+            /* Orange */
+            --nord13: #ebcb8b;
+            /* Yellow */
+            --nord14: #a3be8c;
+            /* Green */
+            --nord15: #b48ead;
+            /* Purple */
+
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--nord0);
+            color: var(--nord4);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--nord2);
+            padding-bottom: 15px;
+        }
+
+        .title-bar {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .title-bar>h1 {
+            color: var(--nord8);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .title-bar>span {
+            flex-grow: 1;
+            text-align: right;
+            font-size: 90%;
+            color: var(--nord9);
+        }
+
+
+        /* --- Grid Layout --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        /* --- Card Style --- */
+        .card {
+            background-color: var(--nord1);
+            border: 1px solid var(--nord2);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card:hover {
+            /* transform: translateY(-2px); */
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+            border-color: var(--nord9);
+        }
+
+        /* --- Header Section (Project & Note) --- */
+        .card-header {
+            margin-bottom: 15px;
+            border-bottom: 1px dashed var(--nord2);
+            padding-bottom: 10px;
+        }
+
+        .project-title {
+            color: var(--nord7);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .note-text {
+            color: var(--nord4);
+            font-size: 0.9rem;
+            display: block;
+            min-height: 1.2em;
+            /* Keep height even if empty */
+        }
+
+        /* --- Data Fields (Read-only Textarea style) --- */
+        .field-group {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .field-label {
+            font-size: 0.75rem;
+            color: var(--nord9);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: flex;
+            font-weight: 600;
+        }
+
+        .copy-ok>.field-label::after {
+            content: "复制成功";
+            text-align: right;
+            display: block;
+            flex-grow: 1;
+            color: var(--nord7);
+        }
+
+        .copy-err>.field-label::after {
+            content: "复制失败";
+            text-align: right;
+            display: block;
+            flex-grow: 1;
+            color: var(--nord11);
+        }
+
+        /* --- Adaptive Textarea --- */
+        .value-box {
+            width: 100%;
+            background-color: var(--nord0);
+            border: 1px solid var(--nord2);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--nord6);
+            resize: none;
+            /* Disable manual resize */
+            overflow: hidden;
+            /* Hide scrollbar when height matches content */
+            outline: none;
+            cursor: text;
+            line-height: 1.4;
+            transition: border-color 0.2s, background-color 0.2s;
+
+            /* Important for wrapping long strings like item IDs */
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Focus/Copy Active State */
+        .value-box:focus {
+            border-color: var(--nord7);
+            /* background-color: #353b49; */
+            /* Slightly lighter nord0 */
+            /* box-shadow: 0 0 0 2px rgba(143, 188, 187, 0.2); */
+        }
+
+        /* Placeholder style for empty fields */
+        .value-box:placeholder-shown {
+            color: var(--nord3);
+            font-style: italic;
+        }
+
+        .value-box-old {
+            width: 100%;
+            background-color: var(--nord0);
+            /* Slightly darker than card */
+            border: 1px solid var(--nord2);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--nord6);
+            white-space: pre-wrap;
+            /* Preserve whitespace but wrap long lines */
+            word-break: break-all;
+            /* Break very long words (like IDs) */
+            resize: none;
+            /* Disable resize handle */
+            outline: none;
+            /* cursor: default; */
+            user-select: text;
+            overflow-x: auto;
+            /* Scroll horizontally if needed inside box */
+        }
+
+        /* Highlight specific keywords in blacklists/whitelists if needed via JS, 
+           but keeping it simple raw text for now as requested */
+
+        /* Empty state styling */
+        .value-box:empty::before {
+            content: "N/A";
+            color: var(--nord3);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="title-bar">
+                <h1>配方配置列表</h1><span id="count">11个项目</span>
+            </div>
+            <p>
+                1. 由于工具生成的样板不含有电路，故需将所有需要改成电路a的样板塞进一个空的超级样板总成，塞进去之后将超级样板总成虚拟电路设置为a，shift按下G图标，此时所有样板电路改为a，若有另一批无电路样板需要更改电路，可置于该样板总成内，设置电路为b，前一批含电路样板不会发生改变，shift按下G图标，新一批样板电路即为b
+                <br>
+                2. 电路更改：由于工具生成的样板不含有电路，故需将所有需要改成电路a的样板塞进一个空的超级样板总成，塞进去之后将超级样板总成虚拟电路设置为a，shift按下"G"图标，此时所有样板电路改为a，若有另一批无电路样板需要更改电路，可置于该样板总成内，设置电路为b，前一批含电路样板不会发生改变，shift按下"G"图标，新一批样板电路即为b
+                <br>
+                3. 删除电路：删除总成内部的虚拟电路，按下shift+"G"图标，所有样板电路皆被删除
+                <br>
+                4. 前置条件：去除无用物品，因无法选择性生成仅含有通用电路板的样板故去除所有通用电路板之外的样板 (processor control_circuit suprachronal
+                electronic_circuit vacuum_tube circuit_resonatic nand_chip integrated_circuit assembly computer
+                mainframe) 传送带含不同橡胶同理去除，去除星门硅岩(较新版本中移除了星门硅岩不需要在黑名单输入sgjourney)
+            </p>
+        </header>
+        <!-- 数据容器 -->
+        <div id="app" class="grid">
+            <!-- 卡片将通过 JS 插入这里 -->
+        </div>
+
+    </div>
+
+    <script>
+        // 您的数据源
+        const rawData = [
+            {
+                "项目": "组装机1",
+                "配方类型": "assembler",
+                "电路": "1",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "coil crate",
+                "输出黑名单": "",
+                "备注": "电压线圈 板条箱"
+            },
+            {
+                "项目": "组装机4",
+                "配方类型": "assembler",
+                "电路": "4",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "frame gearbox",
+                "输出黑名单": "",
+                "备注": "框架 齿轮箱机械方块"
+            },
+            {
+                "项目": "组装机6",
+                "配方类型": "assembler",
+                "电路": "6",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "casing sub",
+                "输出黑名单": "",
+                "备注": "机械方块 机器外壳 镀钯变电站"
+            },
+            {
+                "项目": "组装机8",
+                "配方类型": "assembler",
+                "电路": "8",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "cas kev mai",
+                "输出黑名单": "",
+                "备注": "15机械方块 编制凯芙拉 维护仓"
+            },
+            {
+                "项目": "丁苯橡胶线缆",
+                "配方类型": "assembler",
+                "电路": "",
+                "输入白名单": "butadiene",
+                "输入黑名单": "",
+                "输出白名单": "cable",
+                "输出黑名单": "",
+                "备注": "有丁苯橡胶了之后再生成"
+            },
+            {
+                "项目": "能源仓的升级\n附带线圈",
+                "配方类型": "assembler",
+                "电路": "",
+                "输入白名单": "y_i wire",
+                "输入黑名单": "",
+                "输出白名单": "y_i n_i coil",
+                "输出黑名单": "net wireless super",
+                "备注": "新版私货普通仓可直接合成为无线仓和电网仓，这里仅提供能源仓1→4→16→64共39个样板"
+            },
+            {
+                "项目": "压模 转子",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "rotor",
+                "输入黑名单": "dust sol",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": "推荐将所有金属/化学材料统一转化为锭，以最少的步骤处理"
+            },
+            {
+                "项目": "螺栓",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "bolt",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "长杆",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "long",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "环",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "ring",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": "去除了焊锡块"
+            },
+            {
+                "项目": "微型管道",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "tiny_p",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "小型管道",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "small_p",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "普通管道",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "normal_p",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "大型管道",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "large_p",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "巨型管道",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "huge_p",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "大齿轮",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "ingot :gear",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "小齿轮",
+                "配方类型": "extruder",
+                "电路": "",
+                "输入白名单": "ingot _gear",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "车床",
+                "配方类型": "lathe",
+                "电路": "",
+                "输入白名单": "",
+                "输入黑名单": "gem",
+                "输出白名单": "",
+                "输出黑名单": "bowl stick lens",
+                "备注": "去除了碗、棍母、透镜"
+            },
+            {
+                "项目": "单层板、弹簧",
+                "配方类型": "bender",
+                "电路": "1",
+                "输入白名单": "ingot rod",
+                "输入黑名单": "",
+                "输出白名单": "plate spring",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "双层板",
+                "配方类型": "bender",
+                "电路": "2",
+                "输入白名单": "ingot",
+                "输入黑名单": "",
+                "输出白名单": "double",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "致密板",
+                "配方类型": "bender",
+                "电路": "9",
+                "输入白名单": "ingot",
+                "输入黑名单": "",
+                "输出白名单": "dense",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "箔",
+                "配方类型": "bender",
+                "电路": "10",
+                "输入白名单": "ingot",
+                "输入黑名单": "",
+                "输出白名单": "foil",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "线材轧机 1x",
+                "配方类型": "wiremill",
+                "电路": "1",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "single",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "2x",
+                "配方类型": "wiremill",
+                "电路": "2",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "double",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "4x",
+                "配方类型": "wiremill",
+                "电路": "4",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "quadruple",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "8x",
+                "配方类型": "wiremill",
+                "电路": "8",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "octal",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "16x",
+                "配方类型": "wiremill",
+                "电路": "16",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "hex",
+                "输出黑名单": "",
+                "备注": ""
+            },
+            {
+                "项目": "细导线",
+                "配方类型": "wiremill",
+                "电路": "",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "fine",
+                "输出黑名单": "",
+                "备注": "不含有电路，请与其他样板分开处理，以免其他样板电路被删除"
+            },
+            {
+                "项目": "合金冶炼炉",
+                "配方类型": "alloy_blast_smelter",
+                "电路": "1~10",
+                "输入白名单": "←1~10无保护气\n11~20含保护气",
+                "输入黑名单": "",
+                "输出白名单": "前期配方产出为\n液态，需要后续\n补充固化器样板",
+                "输出黑名单": "",
+                "备注": "生成样板前删除所有电炉、搅拌机、电力高炉、冷冻机、提取机中的合金相关样板"
+            },
+            {
+                "项目": "冷冻机",
+                "配方类型": "vacuum_freezer",
+                "电路": "",
+                "输入白名单": "molten",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": "放进单独一个样板总成里，样板总成必须具有并开启\"禁用副产物\"功能"
+            },
+            {
+                "项目": "反熵冷凝",
+                "配方类型": "antientropy_condensation",
+                "电路": "",
+                "输入白名单": "molten",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "",
+                "备注": "生成反熵冷凝熔融→锭样板后删除上一条提到的样板总成"
+            },
+            {
+                "项目": "太空电梯组装",
+                "配方类型": "assembler_module",
+                "电路": "",
+                "输入白名单": "",
+                "输入黑名单": "",
+                "输出白名单": "",
+                "输出黑名单": "drone card",
+                "备注": "去除太空无人机、转换模拟卡"
+            }
+        ];
+
+        /**
+         * 自动调整 Textarea 高度
+         * 重置高度以获取正确的 scrollHeight，然后设置为内容高度
+         */
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+
+            // 如果内容很少，设置一个最小高度以保持美观
+            if (textarea.scrollHeight < 35) {
+                textarea.style.height = '35px';
+            }
+        }
+
+        function copy(textareaElement, callback) {
+            textareaElement.select();
+            if (document.execCommand && document.execCommand('copy')) {
+                callback(true)
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(textareaElement.value)
+                    .then(() => { callback(true) })
+                    .catch((err) => {
+                        callback(false)
+                        console.error(err);
+                    })
+            } else (
+                callback(false)
+            )
+        }
+
+        function handleCopyClick(event) {
+            let container = event.target.parentElement
+            copy(event.target, ok => {
+                cls = ok ? 'copy-ok' : 'copy-err'
+                console.log(ok);
+                container.classList.add(cls)
+                setTimeout(() => { container.classList.remove(cls) }, 1000)
+            })
+        }
+
+        function renderData(data) {
+            const container = document.getElementById('app');
+            let htmlContent = '';
+
+            data.forEach(item => {
+                // 辅助函数：生成字段 HTML
+                const createField = (label, value) => {
+                    return `
+                    <div class="field-group">
+                        <div class="field-label"><span>${label}</span></div>
+                        <textarea class="value-box" readonly name="no" placeholder="N/A" rows="1">${value || ''}</textarea>
+                    </div>
+                `;
+                };
+
+                htmlContent += `
+                <article class="card">
+                    <div class="card-header">
+                        <div class="project-title">${item["项目"]}</div>
+                        <div class="note-text">${item["备注"] || ''}</div>
+                    </div>
+                    
+                    <div class="card-body">
+                        ${createField('配方类型', item["配方类型"])}
+                        ${createField('电路', item["电路"])}
+                        ${createField('输入白名单', item["输入白名单"])}
+                        ${createField('输入黑名单', item["输入黑名单"])}
+                        ${createField('输出白名单', item["输出白名单"])}
+                        ${createField('输出黑名单', item["输出黑名单"])}
+                    </div>
+                </article>
+            `;
+            });
+
+            container.innerHTML = htmlContent;
+
+            // --- 初始化逻辑 ---
+            const textareas = document.querySelectorAll('.value-box')
+
+            textareas.forEach(textarea => {
+                // 1. 初始高度调整
+                autoResize(textarea);
+
+                // 2. 绑定点击复制事件
+                if (textarea.value) {
+                    textarea.addEventListener('click', handleCopyClick);
+                }
+
+                // 3. 防止移动端双击缩放导致的光标乱跳，同时保持点击选择体验
+                textarea.addEventListener('focus', () => {
+                    // 可选：如果希望每次点击都重新全选，可以在这里再次调用 select()
+                    // 但 click 事件中已经调用了，这里主要为了兼容某些浏览器的 focus 行为
+                });
+            });
+
+            // 监听窗口大小变化，重新调整高度（防止列宽变化导致换行，高度不匹配）
+            window.addEventListener('resize', () => {
+                textareas.forEach(autoResize);
+            });
+        }
+
+        // 执行渲染
+        document.addEventListener('DOMContentLoaded', () => {
+            renderData(rawData);
+            document.getElementById('count').innerText = rawData.length + ' 个项目'
+        });
+    </script>
+
+</body>
+
+</html>
