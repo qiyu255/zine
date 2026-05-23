@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HTML 目录</title>
+
+<style>
+:root {
+  --bg_h: #1d2021;
+  --bg:   #282828;
+  --bg_s: #32302f;
+  --bg1:  #3c3836;
+  --bg2:  #504945;
+  --bg3:  #665c54;
+  --bg4:  #7c6f64;
+  --fg:  #fbf1c7;
+  --fg1: #ebdbb2;
+  --fg2: #d5c4a1;
+  --fg3: #bdae93;
+  --fg4: #a89984;
+  --red:    #fb4934;
+  --green:  #b8bb26;
+  --yellow: #fabd2f;
+  --blue:   #83a598;
+  --purple: #d3869b;
+  --aqua:   #8ec07c;
+  --gray:   #928374;
+  --orange: #fe8019;
+  --red-dim:    #cc2412;
+  --green-dim:  #98971a;
+  --yellow-dim: #d79921;
+  --blue-dim:   #458588;
+  --purple-dim: #b16286;
+  --aqua-dim:   #689d6a;
+  --gray-dim:   #a89984;
+  --orange-dim: #d65d0e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg_h);
+  color: var(--fg1);
+  font-family:
+    Inter,
+    "Noto Sans SC",
+    system-ui,
+    sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 42px);
+  color: var(--yellow);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin-top: 10px;
+  color: var(--fg4);
+  line-height: 1.6;
+}
+
+.panel {
+  background: linear-gradient(
+    180deg,
+    var(--bg_s),
+    var(--bg)
+  );
+  border: 1px solid var(--bg2);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.tree {
+  list-style: none;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.tree > li + li {
+  margin-top: 8px;
+}
+
+.dir > details {
+  border-left: 1px dashed var(--bg3);
+  padding-left: 12px;
+}
+
+.dir summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--aqua);
+  font-weight: 700;
+  padding: 6px 0;
+  user-select: none;
+}
+
+.dir summary::-webkit-details-marker {
+  display: none;
+}
+
+.dir summary::before {
+  content: "▾";
+  display: inline-block;
+  width: 1em;
+  color: var(--green);
+}
+
+.dir details:not([open]) summary::before {
+  content: "▸";
+}
+
+.file a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--fg1);
+  background: var(--bg_s);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease;
+}
+
+.file a:hover {
+  background: var(--bg1);
+  border-color: var(--blue-dim);
+  transform: translateY(-1px);
+}
+
+.file .title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.file .path {
+  font-size: 12px;
+  color: var(--fg4);
+  white-space: nowrap;
+}
+
+.footer {
+  margin-top: 18px;
+  text-align: center;
+  color: var(--gray);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 14px;
+  }
+
+  .panel {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .file a {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file .path {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .tree {
+    padding-left: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">HTML 目录</h1>
+      <div class="subtitle">
+        6 个页面
+      </div>
+    </header>
+
+    <main class="panel">
+      
+<ul class="tree depth-0">
+  
+<li class="file">
+  <a href="ascii.html">
+    <span class="title">ASCII Table</span>
+    <span class="path">ascii.html</span>
+  </a>
+</li>
+
+
+<li class="file">
+  <a href="browser-info.html">
+    <span class="title">Browser Inspector</span>
+    <span class="path">browser-info.html</span>
+  </a>
+</li>
+
+
+<li class="file">
+  <a href="gojuuon.html">
+    <span class="title">gojuuon</span>
+    <span class="path">gojuuon.html</span>
+  </a>
+</li>
+
+
+<li class="file">
+  <a href="gtl.html">
+    <span class="title">格式化数据展示 - Nord Theme</span>
+    <span class="path">gtl.html</span>
+  </a>
+</li>
+
+
+<li class="file">
+  <a href="js.html">
+    <span class="title">JS 沙盒</span>
+    <span class="path">js.html</span>
+  </a>
+</li>
+
+
+<li class="file">
+  <a href="periodic-table.html">
+    <span class="title">化学元素周期表</span>
+    <span class="path">periodic-table.html</span>
+  </a>
+</li>
+
+</ul>
+
+    </main>
+
+    <footer class="footer">
+      Generated at 2026/5/23 16:57:37
+    </footer>
+  </div>
+</body>
+</html>
