@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg_h: #1d2021;
+      --bg: #282828;
+      --bg_s: #32302f;
+      --bg1: #3c3836;
+      --bg2: #504945;
+      --bg3: #665c54;
+      --bg4: #7c6f64;
+      --fg: #fbf1c7;
+      --fg1: #ebdbb2;
+      --fg2: #d5c4a1;
+      --fg3: #bdae93;
+      --fg4: #a89984;
+      --yellow: #fabd2f;
+      --blue: #83a598;
+      --purple: #d3869b;
+      --aqua: #8ec07c;
+      --orange: #fe8019;
+      --green: #b8bb26;
+      --blue-dim: #458588;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg_h);
+      color: var(--fg1);
+      font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem .6rem 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--fg);
+      letter-spacing: .12em;
+      margin-bottom: .15rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: .7rem;
+      color: var(--fg4);
+      letter-spacing: .08em;
+      margin-bottom: .9rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: .9rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--bg3);
+      background: var(--bg_s);
+      color: var(--fg3);
+      font-size: .75rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .tab:hover {
+      background: var(--bg1);
+      color: var(--fg1);
+    }
+
+    .tab.active {
+      background: var(--blue-dim);
+      border-color: var(--blue);
+      color: var(--fg);
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: .9rem;
+    }
+
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .65rem;
+      color: var(--fg4);
+    }
+
+    .leg-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .section {
+      margin-bottom: 1.2rem;
+    }
+
+    .sec-title {
+      font-size: .65rem;
+      color: var(--fg4);
+      letter-spacing: .1em;
+      margin-bottom: .4rem;
+      padding-left: 1px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 3px;
+    }
+
+    th {
+      font-size: .58rem;
+      color: var(--fg4);
+      font-weight: 400;
+      text-align: center;
+      padding: 2px 1px;
+      letter-spacing: .04em;
+    }
+
+    td {
+      background: var(--bg_s);
+      /* border: 1px solid var(--bg1); */
+      border-radius: 5px;
+      text-align: center;
+      padding: 5px 2px 4px;
+      vertical-align: middle;
+      cursor: default;
+      transition: background .12s;
+    }
+
+    td:hover {
+      background: var(--bg1);
+    }
+
+    td.empty {
+      background: var(--bg);
+      border-color: transparent;
+    }
+
+    td.row-head {
+      background: var(--bg);
+      color: var(--fg4);
+      font-size: .58rem;
+      letter-spacing: .04em;
+      border-color: transparent;
+      font-weight: 400;
+      white-space: nowrap;
+      padding: 0 3px;
+    }
+
+    .kana {
+      display: block;
+      line-height: 1;
+      color: var(--fg);
+    }
+
+    .roman {
+      display: block;
+      color: var(--fg4);
+      margin-top: 2px;
+      font-family: 'SF Mono', 'Fira Mono', monospace;
+    }
+
+    .alt {
+      display: block;
+      color: var(--fg3);
+      margin-top: 1px;
+    }
+
+    td.vowel .kana {
+      color: var(--yellow);
+    }
+
+    td.n-row .kana {
+      color: var(--aqua);
+    }
+
+    td.voiced .kana {
+      color: var(--purple);
+    }
+
+    td.semivoiced .kana {
+      color: var(--orange);
+    }
+
+    td.youon .kana {
+      color: var(--green);
+    }
+
+    td.youon-v .kana {
+      color: var(--purple);
+    }
+
+    td.youon-s .kana {
+      color: var(--orange);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--bg2);
+      margin: .2rem 0 1rem;
+      border: none;
+    }
+
+    /* Desktop */
+    .kana {
+      font-size: 1.2rem;
+    }
+
+    .alt {
+      font-size: .8rem;
+    }
+
+    .roman {
+      font-size: .58rem;
+    }
+
+    /* Tablet */
+    @media(max-width:680px) {
+      .kana {
+        font-size: 1rem;
+      }
+
+      .alt {
+        font-size: .72rem;
+      }
+
+      .roman {
+        font-size: .54rem;
+      }
+
+      table {
+        border-spacing: 2px;
+      }
+
+      td {
+        padding: 4px 1px 3px;
+      }
+    }
+
+    /* Mobile */
+    @media(max-width:420px) {
+      .page {
+        padding: .7rem .35rem 1.5rem;
+      }
+
+      h1 {
+        font-size: .95rem;
+      }
+
+      .kana {
+        font-size: .88rem;
+      }
+
+      .alt {
+        font-size: .65rem;
+      }
+
+      .roman {
+        font-size: .5rem;
+      }
+
+      table {
+        border-spacing: 2px;
+      }
+
+      td {
+        padding: 3px 1px 3px;
+        border-radius: 4px;
+      }
+
+      td.row-head {
+        font-size: .52rem;
+        padding: 0 2px;
+      }
+
+      th {
+        font-size: .52rem;
+      }
+
+      .leg-item {
+        font-size: .6rem;
+      }
+
+      .sec-title {
+        font-size: .6rem;
+      }
+
+      .tab {
+        padding: 3px 10px;
+        font-size: .7rem;
+      }
+    }
+
+    /* Very small */
+    @media(max-width:340px) {
+      .kana {
+        font-size: .78rem;
+      }
+
+      .alt {
+        font-size: .58rem;
+      }
+
+      .roman {
+        font-size: .46rem;
+      }
+
+      table {
+        border-spacing: 1px;
+      }
+
+      td {
+        padding: 3px 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+    <h2 class="sr-only" style="position:absolute;left:-9999px">日语五十音图与拗音对照表</h2>
+    <h1>五十音図</h1>
+    <p class="subtitle">ごじゅうおんず · Gojūon-zu</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('both')">平 + 片</button>
+      <button class="tab" onclick="switchTab('hira')">平假名</button>
+      <button class="tab" onclick="switchTab('kata')">片假名</button>
+    </div>
+
+    <div class="legend">
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--yellow)"></div>母音
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--purple)"></div>浊音
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--orange)"></div>半浊音
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--aqua)"></div>撥音 ん
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--green)"></div>拗音清
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--purple)"></div>拗音浊
+      </div>
+      <div class="leg-item">
+        <div class="leg-dot" style="background:var(--orange)"></div>拗音半浊
+      </div>
+    </div>
+
+    <div id="main-section" class="section"></div>
+    <div id="voiced-section" class="section"></div>
+    <hr class="divider">
+    <div id="youon-section" class="section"></div>
+    <div id="youon-voiced-section" class="section"></div>
+  </div>
+
+  <script>
+    const colsJa = ['あ段', 'い段', 'う段', 'え段', 'お段'];
+    const youonColsJa = ['〜や', '〜ゆ', '〜よ'];
+
+    const mainRows = [
+      { row: 'ア行', h: ['あ', 'い', 'う', 'え', 'お'], k: ['ア', 'イ', 'ウ', 'エ', 'オ'], r: ['a', 'i', 'u', 'e', 'o'], vowel: true },
+      { row: 'カ行', h: ['か', 'き', 'く', 'け', 'こ'], k: ['カ', 'キ', 'ク', 'ケ', 'コ'], r: ['ka', 'ki', 'ku', 'ke', 'ko'] },
+      { row: 'サ行', h: ['さ', 'し', 'す', 'せ', 'そ'], k: ['サ', 'シ', 'ス', 'セ', 'ソ'], r: ['sa', 'shi', 'su', 'se', 'so'] },
+      { row: 'タ行', h: ['た', 'ち', 'つ', 'て', 'と'], k: ['タ', 'チ', 'ツ', 'テ', 'ト'], r: ['ta', 'chi', 'tsu', 'te', 'to'] },
+      { row: 'ナ行', h: ['な', 'に', 'ぬ', 'ね', 'の'], k: ['ナ', 'ニ', 'ヌ', 'ネ', 'ノ'], r: ['na', 'ni', 'nu', 'ne', 'no'] },
+      { row: 'ハ行', h: ['は', 'ひ', 'ふ', 'へ', 'ほ'], k: ['ハ', 'ヒ', 'フ', 'ヘ', 'ホ'], r: ['ha', 'hi', 'fu', 'he', 'ho'] },
+      { row: 'マ行', h: ['ま', 'み', 'む', 'め', 'も'], k: ['マ', 'ミ', 'ム', 'メ', 'モ'], r: ['ma', 'mi', 'mu', 'me', 'mo'] },
+      { row: 'ヤ行', h: ['や', '', 'ゆ', '', 'よ'], k: ['ヤ', '', 'ユ', '', 'ヨ'], r: ['ya', '', 'yu', '', 'yo'] },
+      { row: 'ラ行', h: ['ら', 'り', 'る', 'れ', 'ろ'], k: ['ラ', 'リ', 'ル', 'レ', 'ロ'], r: ['ra', 'ri', 'ru', 're', 'ro'] },
+      { row: 'ワ行', h: ['わ', '', '', '', 'を'], k: ['ワ', '', '', '', 'ヲ'], r: ['wa', '', '', '', 'wo'] },
+      { row: 'ン', h: ['ん', '', '', '', ''], k: ['ン', '', '', '', ''], r: ['n', '', '', '', ''], nrow: true },
+    ];
+    const voicedRows = [
+      { row: 'ガ行', h: ['が', 'ぎ', 'ぐ', 'げ', 'ご'], k: ['ガ', 'ギ', 'グ', 'ゲ', 'ゴ'], r: ['ga', 'gi', 'gu', 'ge', 'go'], voiced: true },
+      { row: 'ザ行', h: ['ざ', 'じ', 'ず', 'ぜ', 'ぞ'], k: ['ザ', 'ジ', 'ズ', 'ゼ', 'ゾ'], r: ['za', 'ji', 'zu', 'ze', 'zo'], voiced: true },
+      { row: 'ダ行', h: ['だ', 'ぢ', 'づ', 'で', 'ど'], k: ['ダ', 'ヂ', 'ヅ', 'デ', 'ド'], r: ['da', 'di', 'du', 'de', 'do'], voiced: true },
+      { row: 'バ行', h: ['ば', 'び', 'ぶ', 'べ', 'ぼ'], k: ['バ', 'ビ', 'ブ', 'ベ', 'ボ'], r: ['ba', 'bi', 'bu', 'be', 'bo'], voiced: true },
+      { row: 'パ行', h: ['ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ'], k: ['パ', 'ピ', 'プ', 'ペ', 'ポ'], r: ['pa', 'pi', 'pu', 'pe', 'po'], semi: true },
+    ];
+    const youonRows = [
+      { row: 'きゃ', h: ['きゃ', 'きゅ', 'きょ'], k: ['キャ', 'キュ', 'キョ'], r: ['kya', 'kyu', 'kyo'] },
+      { row: 'しゃ', h: ['しゃ', 'しゅ', 'しょ'], k: ['シャ', 'シュ', 'ショ'], r: ['sha', 'shu', 'sho'] },
+      { row: 'ちゃ', h: ['ちゃ', 'ちゅ', 'ちょ'], k: ['チャ', 'チュ', 'チョ'], r: ['cha', 'chu', 'cho'] },
+      { row: 'にゃ', h: ['にゃ', 'にゅ', 'にょ'], k: ['ニャ', 'ニュ', 'ニョ'], r: ['nya', 'nyu', 'nyo'] },
+      { row: 'ひゃ', h: ['ひゃ', 'ひゅ', 'ひょ'], k: ['ヒャ', 'ヒュ', 'ヒョ'], r: ['hya', 'hyu', 'hyo'] },
+      { row: 'みゃ', h: ['みゃ', 'みゅ', 'みょ'], k: ['ミャ', 'ミュ', 'ミョ'], r: ['mya', 'myu', 'myo'] },
+      { row: 'りゃ', h: ['りゃ', 'りゅ', 'りょ'], k: ['リャ', 'リュ', 'リョ'], r: ['rya', 'ryu', 'ryo'] },
+    ];
+    const youonVoicedRows = [
+      { row: 'ぎゃ', h: ['ぎゃ', 'ぎゅ', 'ぎょ'], k: ['ギャ', 'ギュ', 'ギョ'], r: ['gya', 'gyu', 'gyo'], voiced: true },
+      { row: 'じゃ', h: ['じゃ', 'じゅ', 'じょ'], k: ['ジャ', 'ジュ', 'ジョ'], r: ['ja', 'ju', 'jo'], voiced: true },
+      { row: 'ぢゃ', h: ['ぢゃ', 'ぢゅ', 'ぢょ'], k: ['ヂャ', 'ヂュ', 'ヂョ'], r: ['dya', 'dyu', 'dyo'], voiced: true },
+      { row: 'びゃ', h: ['びゃ', 'びゅ', 'びょ'], k: ['ビャ', 'ビュ', 'ビョ'], r: ['bya', 'byu', 'byo'], voiced: true },
+      { row: 'ぴゃ', h: ['ぴゃ', 'ぴゅ', 'ぴょ'], k: ['ピャ', 'ピュ', 'ピョ'], r: ['pya', 'pyu', 'pyo'], semi: true },
+    ];
+
+    let mode = 'both';
+
+    function c5(h, k, r, cls) {
+      if (!h && !k) return `<td class="empty"></td>`;
+      let kana = mode === 'both' ? `<span class="kana">${h}</span><span class="alt">${k}</span>` : mode === 'hira' ? `<span class="kana">${h}</span>` : `<span class="kana">${k}</span>`;
+      return `<td class="${cls}">${kana}<span class="roman">${r}</span></td>`;
+    }
+    function c3(h, k, r, cls) {
+      let kana = mode === 'both' ? `<span class="kana">${h}</span><span class="alt">${k}</span>` : mode === 'hira' ? `<span class="kana">${h}</span>` : `<span class="kana">${k}</span>`;
+      return `<td class="${cls}">${kana}<span class="roman">${r}</span></td>`;
+    }
+
+    function buildMain(rows, title) {
+      let html = `<div class="sec-title">${title}</div><table><thead><tr><th></th>`;
+      colsJa.forEach(c => html += `<th>${c}</th>`);
+      html += '</tr></thead><tbody>';
+      rows.forEach(row => {
+        const cls = row.vowel ? 'vowel' : row.nrow ? 'n-row' : row.voiced ? 'voiced' : row.semi ? 'semivoiced' : '';
+        html += `<tr><td class="row-head">${row.row}</td>`;
+        for (let i = 0; i < 5; i++) html += c5(row.h[i], row.k[i], row.r[i], cls);
+        html += '</tr>';
+      });
+      return html + '</tbody></table>';
+    }
+    function buildYouon(rows, title, base) {
+      let html = `<div class="sec-title">${title}</div><table><thead><tr><th></th>`;
+      youonColsJa.forEach(c => html += `<th>${c}</th>`);
+      html += '</tr></thead><tbody>';
+      rows.forEach(row => {
+        const cls = row.voiced ? 'youon-v' : row.semi ? 'youon-s' : base;
+        html += `<tr><td class="row-head">${row.row}</td>`;
+        for (let i = 0; i < 3; i++) html += c3(row.h[i], row.k[i], row.r[i], cls);
+        html += '</tr>';
+      });
+      return html + '</tbody></table>';
+    }
+
+    function render() {
+      document.getElementById('main-section').innerHTML = buildMain(mainRows, '清音 · 五十音');
+      document.getElementById('voiced-section').innerHTML = buildMain(voicedRows, '浊音 · 半浊音');
+      document.getElementById('youon-section').innerHTML = buildYouon(youonRows, '拗音（清音）', 'youon');
+      document.getElementById('youon-voiced-section').innerHTML = buildYouon(youonVoicedRows, '拗音（浊音 · 半浊音）', 'youon');
+    }
+    function switchTab(m) {
+      mode = m;
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['both', 'hira', 'kata'][i] === m));
+      render();
+    }
+    render();
+  </script>
+</body>
+
+</html>
