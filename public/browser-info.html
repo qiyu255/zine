@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browser Inspector</title>
+<style>
+:root {
+  --bg_h: #1d2021;
+  --bg:   #282828;
+  --bg_s: #32302f;
+  --bg1:  #3c3836;
+  --bg2:  #504945;
+  --bg3:  #665c54;
+  --bg4:  #7c6f64;
+  --fg:  #fbf1c7;
+  --fg1: #ebdbb2;
+  --fg2: #d5c4a1;
+  --fg3: #bdae93;
+  --fg4: #a89984;
+  --red:    #fb4934;
+  --green:  #b8bb26;
+  --yellow: #fabd2f;
+  --blue:   #83a598;
+  --purple: #d3869b;
+  --aqua:   #8ec07c;
+  --gray:   #928374;
+  --orange: #fe8019;
+  --red-dim:    #cc2412;
+  --green-dim:  #98971a;
+  --yellow-dim: #d79921;
+  --blue-dim:   #458588;
+  --purple-dim: #b16286;
+  --aqua-dim:   #689d6a;
+  --gray-dim:   #a89984;
+  --orange-dim: #d65d0e;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap');
+
+body {
+  background: var(--bg_h);
+  color: var(--fg1);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+header {
+  background: var(--bg);
+  border-bottom: 2px solid var(--bg2);
+  padding: 20px 24px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  width: 32px; height: 32px;
+  background: var(--orange);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+header h1 {
+  font-family: 'Syne', 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: clamp(16px, 4vw, 22px);
+  color: var(--fg);
+  letter-spacing: -0.02em;
+}
+
+header h1 span { color: var(--orange); }
+
+.header-time {
+  margin-left: auto;
+  color: var(--fg4);
+  font-size: 11px;
+  text-align: right;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ── Layout ── */
+main {
+  padding: 20px 16px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 20px;
+  background: var(--bg);
+  border: 1px solid var(--bg2);
+  border-radius: 8px;
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+
+.section:nth-child(1)  { animation-delay: 0.05s }
+.section:nth-child(2)  { animation-delay: 0.10s }
+.section:nth-child(3)  { animation-delay: 0.15s }
+.section:nth-child(4)  { animation-delay: 0.20s }
+.section:nth-child(5)  { animation-delay: 0.25s }
+.section:nth-child(6)  { animation-delay: 0.30s }
+.section:nth-child(7)  { animation-delay: 0.35s }
+.section:nth-child(8)  { animation-delay: 0.40s }
+.section:nth-child(9)  { animation-delay: 0.45s }
+.section:nth-child(10) { animation-delay: 0.50s }
+.section:nth-child(11) { animation-delay: 0.55s }
+.section:nth-child(12) { animation-delay: 0.60s }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg_s);
+  border-bottom: 1px solid var(--bg2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.section-header:hover { background: var(--bg1); }
+
+.section-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg2);
+}
+
+.section-count {
+  margin-left: auto;
+  background: var(--bg2);
+  color: var(--fg4);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.section-toggle {
+  color: var(--fg4);
+  font-size: 10px;
+  margin-left: 4px;
+  transition: transform 0.2s;
+}
+
+.section-body { padding: 4px 0; }
+.section.collapsed .section-body { display: none; }
+.section.collapsed .section-toggle { transform: rotate(-90deg); }
+
+/* ── Row ── */
+.row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--bg1);
+  min-height: 32px;
+}
+.row:last-child { border-bottom: none; }
+
+.row:hover { background: var(--bg_s); }
+
+.row-key {
+  padding: 7px 14px;
+  color: var(--fg4);
+  font-size: 11px;
+  border-right: 1px solid var(--bg1);
+  display: flex;
+  align-items: center;
+  word-break: break-word;
+}
+
+.row-val {
+  padding: 7px 14px;
+  color: var(--fg1);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  word-break: break-all;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* badges */
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.badge-green  { background: var(--green-dim);  color: var(--bg_h); }
+.badge-red    { background: var(--red-dim);    color: var(--fg); }
+.badge-yellow { background: var(--yellow-dim); color: var(--bg_h); }
+.badge-blue   { background: var(--blue-dim);   color: var(--fg); }
+.badge-orange { background: var(--orange-dim); color: var(--bg_h); }
+.badge-purple { background: var(--purple-dim); color: var(--bg_h); }
+.badge-aqua   { background: var(--aqua-dim);   color: var(--bg_h); }
+.badge-gray   { background: var(--gray-dim);   color: var(--bg_h); }
+
+/* color swatch */
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.swatch-box {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--bg3);
+  flex-shrink: 0;
+}
+
+/* progress bar */
+.bar-wrap {
+  flex: 1; min-width: 80px;
+  height: 6px;
+  background: var(--bg2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+/* ── Grid layout for wide screens ── */
+@media (min-width: 768px) {
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .section.full-width { grid-column: 1 / -1; }
+}
+
+@media (min-width: 1100px) {
+  main { grid-template-columns: 1fr 1fr 1fr; }
+  .section.wide { grid-column: span 2; }
+  .section.full-width { grid-column: 1 / -1; }
+}
+
+/* ── UA highlight ── */
+.ua-block {
+  padding: 10px 14px;
+  color: var(--aqua);
+  font-size: 11px;
+  line-height: 1.7;
+  word-break: break-all;
+  background: var(--bg_h);
+  border-radius: 0 0 6px 6px;
+  border-top: 1px solid var(--bg2);
+}
+
+/* ── Copy button ── */
+.copy-btn {
+  background: var(--bg2);
+  border: none;
+  color: var(--fg3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { background: var(--bg3); color: var(--fg); }
+.copy-btn.copied { background: var(--green-dim); color: var(--bg_h); }
+
+/* ── Mono value highlight ── */
+.val-num  { color: var(--yellow); }
+.val-bool-t { color: var(--green); }
+.val-bool-f { color: var(--red); }
+.val-str  { color: var(--fg1); }
+.val-na   { color: var(--fg4); font-style: italic; }
+
+/* ── Canvas test ── */
+#color-depth-canvas { display: none; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg_h); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🔍</div>
+  <h1>Browser <span>Inspector</span></h1>
+  <div class="header-time" id="header-time"></div>
+</header>
+
+<main id="main"></main>
+
+<canvas id="color-depth-canvas" width="1" height="1"></canvas>
+
+<script>
+// ─────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────
+const nav = navigator;
+const win = window;
+const scr = screen;
+
+function yn(v, trueLabel='YES', falseLabel='NO') {
+  if (v === true  || v === 'yes') return `<span class="badge badge-green">${trueLabel}</span>`;
+  if (v === false || v === 'no')  return `<span class="badge badge-red">${falseLabel}</span>`;
+  return `<span class="val-na">N/A</span>`;
+}
+function num(v, unit='') {
+  if (v == null || v === '' || isNaN(v)) return `<span class="val-na">N/A</span>`;
+  return `<span class="val-num">${Number(v).toLocaleString()}</span>${unit ? ' <span style="color:var(--fg4);font-size:11px">'+unit+'</span>' : ''}`;
+}
+function str(v) {
+  if (v == null || v === '' || v === 'undefined') return `<span class="val-na">N/A</span>`;
+  return `<span class="val-str">${esc(String(v))}</span>`;
+}
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function badge(label, color='gray') {
+  return `<span class="badge badge-${color}">${esc(label)}</span>`;
+}
+
+function tryGet(fn, fallback='N/A') {
+  try { const v = fn(); return (v == null || v === '') ? fallback : v; }
+  catch(e) { return fallback; }
+}
+
+// ─────────────────────────────────────────────
+// Section builder
+// ─────────────────────────────────────────────
+function buildSection({ id, title, dot, rows, wide, full }) {
+  const cls = ['section', wide ? 'wide' : '', full ? 'full-width' : ''].filter(Boolean).join(' ');
+  const validRows = rows.filter(r => r);
+  const html = `
+<div class="${cls}" id="sec-${id}">
+  <div class="section-header" onclick="toggleSection('${id}')">
+    <div class="section-dot" style="background:${dot}"></div>
+    <span class="section-title">${esc(title)}</span>
+    <span class="section-count">${validRows.length}</span>
+    <span class="section-toggle">▾</span>
+  </div>
+  <div class="section-body">
+    ${validRows.map(r => buildRow(r)).join('')}
+  </div>
+</div>`;
+  return html;
+}
+
+function buildRow({ key, val, extra }) {
+  return `<div class="row">
+    <div class="row-key">${esc(key)}</div>
+    <div class="row-val">${val}${extra ? ' ' + extra : ''}</div>
+  </div>`;
+}
+
+function toggleSection(id) {
+  document.getElementById('sec-' + id).classList.toggle('collapsed');
+}
+
+function copyBtn(text) {
+  const id = 'cb' + Math.random().toString(36).slice(2);
+  setTimeout(() => {
+    const btn = document.getElementById(id);
+    if (btn) btn.onclick = () => {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    };
+  }, 0);
+  return `<button class="copy-btn" id="${id}">Copy</button>`;
+}
+
+// ─────────────────────────────────────────────
+// Data gathering
+// ─────────────────────────────────────────────
+
+// 1. Basic Browser
+function sectionBasic() {
+  const ua = nav.userAgent || '';
+  const vendor = nav.vendor || '';
+  const product = nav.product || '';
+  const appName = nav.appName || '';
+  const appVersion = nav.appVersion || '';
+  const platform = nav.platform || '';
+  const language = nav.language || '';
+  const languages = (nav.languages || []).join(', ') || language;
+  const cookieEnabled = nav.cookieEnabled;
+  const doNotTrack = nav.doNotTrack;
+  const onLine = nav.onLine;
+  const javaEnabled = tryGet(() => nav.javaEnabled ? nav.javaEnabled() : false, false);
+
+  // Parse browser
+  let browserName = 'Unknown', browserVer = '';
+  if (/Edg\//.test(ua))        { browserName = 'Edge';    browserVer = ua.match(/Edg\/([\d.]+)/)?.[1] || ''; }
+  else if (/OPR\//.test(ua))   { browserName = 'Opera';   browserVer = ua.match(/OPR\/([\d.]+)/)?.[1] || ''; }
+  else if (/Chrome\//.test(ua)){ browserName = 'Chrome';  browserVer = ua.match(/Chrome\/([\d.]+)/)?.[1] || ''; }
+  else if (/Firefox\//.test(ua)){ browserName = 'Firefox'; browserVer = ua.match(/Firefox\/([\d.]+)/)?.[1] || ''; }
+  else if (/Safari\//.test(ua)){ browserName = 'Safari';  browserVer = ua.match(/Version\/([\d.]+)/)?.[1] || ''; }
+
+  const dntLabel = doNotTrack === '1' ? badge('ON','green') : doNotTrack === '0' ? badge('OFF','red') : `<span class="val-na">Unset</span>`;
+
+  return buildSection({ id:'basic', title:'Browser Identity', dot:'var(--orange)', rows: [
+    { key: 'Browser',        val: `<span class="val-str" style="color:var(--orange);font-weight:600">${esc(browserName)}</span> <span class="val-num">${esc(browserVer)}</span>` },
+    { key: 'App Name',       val: str(appName) },
+    { key: 'App Version',    val: `<span style="color:var(--fg3);font-size:11px;word-break:break-all">${esc(appVersion.slice(0,80))}${appVersion.length>80?'…':''}</span>` },
+    { key: 'Vendor',         val: str(vendor) },
+    { key: 'Product',        val: str(product) },
+    { key: 'Platform',       val: str(platform) },
+    { key: 'Language',       val: str(language) },
+    { key: 'Languages',      val: str(languages) },
+    { key: 'Cookies',        val: yn(cookieEnabled) },
+    { key: 'Online',         val: yn(onLine) },
+    { key: 'Do Not Track',   val: dntLabel },
+    { key: 'Java Enabled',   val: yn(javaEnabled) },
+  ]});
+}
+
+// 2. User Agent
+function sectionUA() {
+  const ua = nav.userAgent || '';
+  const uach = nav.userAgentData;
+  const rows = [];
+  rows.push({ key: 'Raw UA', val: `<span style="color:var(--aqua);font-size:11px;word-break:break-all">${esc(ua)}</span>`, extra: copyBtn(ua) });
+
+  if (uach) {
+    rows.push({ key: 'Mobile', val: yn(uach.mobile) });
+    rows.push({ key: 'Platform', val: str(uach.platform) });
+    const brands = (uach.brands || []).map(b => `${b.brand}/${b.version}`).join(', ');
+    rows.push({ key: 'Brands', val: str(brands) });
+  }
+  return buildSection({ id:'ua', title:'User Agent', dot:'var(--aqua)', full:true, rows });
+}
+
+// 3. Screen & Display
+function sectionScreen() {
+  const pixelRatio = win.devicePixelRatio || 1;
+  const colorDepth = scr.colorDepth;
+  const pixelDepth = scr.pixelDepth;
+  const orientation = tryGet(() => (scr.orientation || win.orientation));
+  const orientType = tryGet(() => scr.orientation?.type || '');
+  const orientAngle = tryGet(() => scr.orientation?.angle ?? win.orientation ?? '');
+
+  // Detect HDR
+  const isHDR = tryGet(() => win.matchMedia('(dynamic-range: high)').matches, false);
+  const isWideGamut = tryGet(() => win.matchMedia('(color-gamut: p3)').matches, false);
+  const isRec2020 = tryGet(() => win.matchMedia('(color-gamut: rec2020)').matches, false);
+
+  return buildSection({ id:'screen', title:'Screen & Display', dot:'var(--yellow)', rows: [
+    { key: 'Screen Size',    val: `<span class="val-num">${scr.width}</span> × <span class="val-num">${scr.height}</span> <span style="color:var(--fg4);font-size:11px">px</span>` },
+    { key: 'Avail Size',     val: `<span class="val-num">${scr.availWidth}</span> × <span class="val-num">${scr.availHeight}</span> <span style="color:var(--fg4);font-size:11px">px</span>` },
+    { key: 'Viewport',       val: `<span class="val-num">${win.innerWidth}</span> × <span class="val-num">${win.innerHeight}</span> <span style="color:var(--fg4);font-size:11px">px</span>` },
+    { key: 'Outer Window',   val: `<span class="val-num">${win.outerWidth}</span> × <span class="val-num">${win.outerHeight}</span> <span style="color:var(--fg4);font-size:11px">px</span>` },
+    { key: 'Device Pixel Ratio', val: num(pixelRatio) },
+    { key: 'Color Depth',    val: num(colorDepth, 'bit') },
+    { key: 'Pixel Depth',    val: num(pixelDepth, 'bit') },
+    { key: 'Orientation',    val: str(orientType || orientAngle) },
+    { key: 'HDR',            val: yn(isHDR) },
+    { key: 'Wide Gamut (P3)',val: yn(isWideGamut) },
+    { key: 'Rec2020',        val: yn(isRec2020) },
+  ]});
+}
+
+// 4. OS & Hardware
+function sectionHardware() {
+  const cores = nav.hardwareConcurrency;
+  const mem = nav.deviceMemory;
+  const maxTouch = nav.maxTouchPoints;
+  const touchSupport = 'ontouchstart' in win || maxTouch > 0;
+  const pointerFine = tryGet(() => win.matchMedia('(pointer: fine)').matches, null);
+  const pointerCoarse = tryGet(() => win.matchMedia('(pointer: coarse)').matches, null);
+  const hoverNone = tryGet(() => win.matchMedia('(hover: none)').matches, null);
+  const batteryAPI = 'getBattery' in nav;
+
+  return buildSection({ id:'hw', title:'OS & Hardware', dot:'var(--purple)', rows: [
+    { key: 'CPU Cores',      val: num(cores) },
+    { key: 'Device Memory',  val: mem != null ? num(mem, 'GB') : `<span class="val-na">N/A</span>` },
+    { key: 'Max Touch Pts',  val: num(maxTouch) },
+    { key: 'Touch Support',  val: yn(touchSupport) },
+    { key: 'Fine Pointer',   val: pointerFine != null ? yn(pointerFine) : `<span class="val-na">N/A</span>` },
+    { key: 'Coarse Pointer', val: pointerCoarse != null ? yn(pointerCoarse) : `<span class="val-na">N/A</span>` },
+    { key: 'Hover Support',  val: hoverNone != null ? yn(!hoverNone) : `<span class="val-na">N/A</span>` },
+    { key: 'Battery API',    val: yn(batteryAPI) },
+  ]});
+}
+
+// 5. Network
+function sectionNetwork() {
+  const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+  const rows = [
+    { key: 'Online',         val: yn(nav.onLine) },
+    { key: 'Type',           val: conn ? str(conn.effectiveType || conn.type) : `<span class="val-na">N/A</span>` },
+    { key: 'Downlink',       val: conn?.downlink != null ? num(conn.downlink, 'Mbps') : `<span class="val-na">N/A</span>` },
+    { key: 'Downlink Max',   val: conn?.downlinkMax != null ? num(conn.downlinkMax, 'Mbps') : `<span class="val-na">N/A</span>` },
+    { key: 'RTT',            val: conn?.rtt != null ? num(conn.rtt, 'ms') : `<span class="val-na">N/A</span>` },
+    { key: 'Save Data',      val: conn?.saveData != null ? yn(conn.saveData) : `<span class="val-na">N/A</span>` },
+  ];
+  return buildSection({ id:'net', title:'Network', dot:'var(--blue)', rows });
+}
+
+// 6. Location & Timezone
+function sectionLocation() {
+  const tz = tryGet(() => Intl.DateTimeFormat().resolvedOptions().timeZone, 'N/A');
+  const locale = tryGet(() => Intl.DateTimeFormat().resolvedOptions().locale, 'N/A');
+  const geolocationAPI = 'geolocation' in nav;
+  const tzOffset = new Date().getTimezoneOffset();
+  const sign = tzOffset <= 0 ? '+' : '-';
+  const absOffset = Math.abs(tzOffset);
+  const tzStr = `UTC${sign}${String(Math.floor(absOffset/60)).padStart(2,'0')}:${String(absOffset%60).padStart(2,'0')}`;
+
+  return buildSection({ id:'loc', title:'Location & Time', dot:'var(--green)', rows: [
+    { key: 'Timezone',       val: str(tz) },
+    { key: 'UTC Offset',     val: str(tzStr) },
+    { key: 'Locale',         val: str(locale) },
+    { key: 'Geolocation API',val: yn(geolocationAPI) },
+    { key: 'Current Time',   val: `<span class="val-str" id="live-time"></span>` },
+  ]});
+}
+
+// 7. Storage
+function sectionStorage() {
+  const ls = tryGet(() => typeof localStorage !== 'undefined', false);
+  const ss = tryGet(() => typeof sessionStorage !== 'undefined', false);
+  const idb = tryGet(() => typeof indexedDB !== 'undefined', false);
+  const cache = tryGet(() => typeof caches !== 'undefined', false);
+  const cookie = nav.cookieEnabled;
+
+  let lsSize = 'N/A';
+  if (ls) {
+    try {
+      let total = 0;
+      for (let k in localStorage) {
+        if (localStorage.hasOwnProperty(k)) total += (localStorage[k]?.length || 0) + k.length;
+      }
+      lsSize = `${(total * 2 / 1024).toFixed(1)} KB`;
+    } catch(e) {}
+  }
+
+  const rows = [
+    { key: 'localStorage',   val: yn(ls), extra: ls ? `<span style="color:var(--fg4);font-size:11px">${esc(lsSize)} used</span>` : '' },
+    { key: 'sessionStorage', val: yn(ss) },
+    { key: 'IndexedDB',      val: yn(idb) },
+    { key: 'CacheStorage',   val: yn(cache) },
+    { key: 'Cookies',        val: yn(cookie) },
+  ];
+  return buildSection({ id:'storage', title:'Storage', dot:'var(--aqua)', rows });
+}
+
+// 8. Media & A/V
+function sectionMedia() {
+  const audioCtx = tryGet(() => typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined', false);
+  const webAudio = audioCtx;
+  const webRTC = tryGet(() => typeof RTCPeerConnection !== 'undefined', false);
+  const mediaStream = tryGet(() => typeof MediaStream !== 'undefined', false);
+  const getUserMedia = tryGet(() => !!(nav.mediaDevices?.getUserMedia || nav.getUserMedia), false);
+  const mediaRecorder = tryGet(() => typeof MediaRecorder !== 'undefined', false);
+  const pictureInPicture = tryGet(() => document.pictureInPictureEnabled, false);
+
+  // Codec support
+  const vid = document.createElement('video');
+  const aud = document.createElement('audio');
+  const codecs = {
+    'H.264':      tryGet(() => vid.canPlayType('video/mp4; codecs="avc1.42E01E"') || '', ''),
+    'H.265/HEVC': tryGet(() => vid.canPlayType('video/mp4; codecs="hev1.1.6.L120.90"') || '', ''),
+    'VP8':        tryGet(() => vid.canPlayType('video/webm; codecs="vp8"') || '', ''),
+    'VP9':        tryGet(() => vid.canPlayType('video/webm; codecs="vp9"') || '', ''),
+    'AV1':        tryGet(() => vid.canPlayType('video/webm; codecs="av01.0.05M.08"') || '', ''),
+    'MP3':        tryGet(() => aud.canPlayType('audio/mpeg') || '', ''),
+    'AAC':        tryGet(() => aud.canPlayType('audio/aac') || '', ''),
+    'Ogg Vorbis': tryGet(() => aud.canPlayType('audio/ogg; codecs="vorbis"') || '', ''),
+    'FLAC':       tryGet(() => aud.canPlayType('audio/flac') || '', ''),
+    'WebM Opus':  tryGet(() => aud.canPlayType('audio/webm; codecs="opus"') || '', ''),
+  };
+
+  function codecBadge(v) {
+    if (v === 'probably') return badge('probably','green');
+    if (v === 'maybe')    return badge('maybe','yellow');
+    return badge('no','red');
+  }
+
+  const rows = [
+    { key: 'Web Audio API',   val: yn(webAudio) },
+    { key: 'WebRTC',          val: yn(webRTC) },
+    { key: 'MediaStream',     val: yn(mediaStream) },
+    { key: 'getUserMedia',    val: yn(getUserMedia) },
+    { key: 'MediaRecorder',   val: yn(mediaRecorder) },
+    { key: 'Picture-in-Pic.', val: yn(pictureInPicture) },
+    ...Object.entries(codecs).map(([k,v]) => ({ key: k, val: codecBadge(v) })),
+  ];
+  return buildSection({ id:'media', title:'Media & Codecs', dot:'var(--red)', rows });
+}
+
+// 9. APIs & Features
+function sectionAPIs() {
+  function has(x) { return typeof x !== 'undefined'; }
+
+  const apis = [
+    ['Service Worker',    'serviceWorker' in nav],
+    ['Web Workers',       has(win.Worker)],
+    ['WebAssembly',       has(win.WebAssembly)],
+    ['WebGL',             tryGet(() => !!document.createElement('canvas').getContext('webgl'), false)],
+    ['WebGL2',            tryGet(() => !!document.createElement('canvas').getContext('webgl2'), false)],
+    ['WebGPU',            tryGet(() => !!nav.gpu, false)],
+    ['WebSocket',         has(win.WebSocket)],
+    ['Fetch API',         has(win.fetch)],
+    ['Notifications',     has(win.Notification)],
+    ['Push API',          'PushManager' in win],
+    ['Clipboard API',     !!(nav.clipboard)],
+    ['Share API',         !!(nav.share)],
+    ['Vibration API',     !!(nav.vibrate)],
+    ['Fullscreen API',    !!(document.fullscreenEnabled)],
+    ['Pointer Lock',      !!(document.pointerLockElement !== undefined)],
+    ['Payment Request',   has(win.PaymentRequest)],
+    ['Credential Mgmt',   !!nav.credentials],
+    ['Bluetooth',         !!nav.bluetooth],
+    ['USB',               !!nav.usb],
+    ['Serial API',        !!nav.serial],
+    ['NFC',               !!nav.nfc],
+    ['Gamepad API',       'getGamepads' in nav],
+    ['Sensor (Accel.)',   has(win.Accelerometer)],
+    ['Speech Recog.',     has(win.SpeechRecognition) || has(win.webkitSpeechRecognition)],
+    ['Speech Synth.',     has(win.speechSynthesis)],
+    ['Crypto API',        has(win.crypto?.subtle)],
+    ['Canvas',            !!document.createElement('canvas').getContext],
+    ['SVG',               has(win.SVGElement)],
+    ['CSS Houdini',       has(win.CSS?.paintWorklet)],
+    ['ResizeObserver',    has(win.ResizeObserver)],
+    ['IntersectionObs.',  has(win.IntersectionObserver)],
+    ['MutationObserver',  has(win.MutationObserver)],
+    ['Pointer Events',    has(win.PointerEvent)],
+    ['Async Clipboard',   !!nav.clipboard?.readText],
+  ];
+
+  const rows = apis.map(([k,v]) => ({ key: k, val: yn(v,'✓','✗') }));
+  return buildSection({ id:'apis', title:'APIs & Features', dot:'var(--green)', wide:true, rows });
+}
+
+// 10. Performance
+function sectionPerf() {
+  const mem = tryGet(() => performance.memory, null);
+  const timing = tryGet(() => performance.timing, null);
+  const navEntry = tryGet(() => performance.getEntriesByType('navigation')[0], null);
+
+  const rows = [];
+  if (mem) {
+    rows.push({ key: 'JS Heap Used',  val: num((mem.usedJSHeapSize / 1048576).toFixed(1), 'MB') });
+    rows.push({ key: 'JS Heap Total', val: num((mem.totalJSHeapSize / 1048576).toFixed(1), 'MB') });
+    rows.push({ key: 'JS Heap Limit', val: num((mem.jsHeapSizeLimit / 1048576).toFixed(1), 'MB') });
+  }
+  if (navEntry) {
+    const dns  = (navEntry.domainLookupEnd - navEntry.domainLookupStart).toFixed(0);
+    const tcp  = (navEntry.connectEnd - navEntry.connectStart).toFixed(0);
+    const ttfb = (navEntry.responseStart - navEntry.requestStart).toFixed(0);
+    const dom  = (navEntry.domContentLoadedEventEnd - navEntry.startTime).toFixed(0);
+    const load = (navEntry.loadEventEnd - navEntry.startTime).toFixed(0);
+    rows.push({ key: 'DNS Lookup',    val: num(dns, 'ms') });
+    rows.push({ key: 'TCP Connect',   val: num(tcp, 'ms') });
+    rows.push({ key: 'TTFB',          val: num(ttfb, 'ms') });
+    rows.push({ key: 'DOM Ready',     val: num(dom, 'ms') });
+    rows.push({ key: 'Page Load',     val: num(load, 'ms') });
+  }
+  rows.push({ key: 'High-Res Timer', val: yn(typeof performance.now === 'function') });
+  rows.push({ key: 'requestAnimFrm', val: yn(typeof requestAnimationFrame === 'function') });
+  if (!rows.length) rows.push({ key: 'Performance API', val: yn(typeof performance !== 'undefined') });
+
+  return buildSection({ id:'perf', title:'Performance', dot:'var(--yellow)', rows });
+}
+
+// 11. Security
+function sectionSecurity() {
+  const isHTTPS = location.protocol === 'https:';
+  const csp = tryGet(() => !!(document.querySelector('meta[http-equiv="Content-Security-Policy"]')), false);
+  const crossOriginIso = tryGet(() => win.crossOriginIsolated, false);
+  const isSecureCtx = win.isSecureContext;
+
+  return buildSection({ id:'sec', title:'Security', dot:'var(--red)', rows: [
+    { key: 'Protocol',          val: str(location.protocol.replace(':','')) },
+    { key: 'HTTPS',             val: yn(isHTTPS) },
+    { key: 'Secure Context',    val: yn(isSecureCtx) },
+    { key: 'Cross-Origin Iso.', val: yn(crossOriginIso) },
+    { key: 'Crypto API',        val: yn(typeof crypto?.subtle !== 'undefined') },
+    { key: 'SubtleCrypto',      val: yn(typeof crypto?.subtle?.digest === 'function') },
+  ]});
+}
+
+// 12. CSS & Fonts
+function sectionCSS() {
+  function mq(q) { return tryGet(() => win.matchMedia(q).matches, false); }
+  const rows = [
+    { key: 'Dark Mode',          val: yn(mq('(prefers-color-scheme: dark)')) },
+    { key: 'Light Mode',         val: yn(mq('(prefers-color-scheme: light)')) },
+    { key: 'Reduced Motion',     val: yn(mq('(prefers-reduced-motion: reduce)')) },
+    { key: 'Reduced Data',       val: yn(mq('(prefers-reduced-data: reduce)')) },
+    { key: 'High Contrast',      val: yn(mq('(prefers-contrast: more)')) },
+    { key: 'Forced Colors',      val: yn(mq('(forced-colors: active)')) },
+    { key: 'Color Gamut sRGB',   val: yn(mq('(color-gamut: srgb)')) },
+    { key: 'Color Gamut P3',     val: yn(mq('(color-gamut: p3)')) },
+    { key: 'Display-mode',       val: mq('(display-mode: standalone)') ? badge('standalone','blue') :
+                                       mq('(display-mode: fullscreen)') ? badge('fullscreen','orange') :
+                                       badge('browser','gray') },
+    { key: 'CSS Grid',           val: yn(tryGet(() => CSS.supports('display','grid'), false)) },
+    { key: 'CSS Subgrid',        val: yn(tryGet(() => CSS.supports('grid-template-rows','subgrid'), false)) },
+    { key: 'CSS Container Q.',   val: yn(tryGet(() => CSS.supports('container-type','inline-size'), false)) },
+    { key: 'CSS Houdini Paint',  val: yn(typeof CSS?.paintWorklet !== 'undefined') },
+    { key: 'CSS Layers',         val: yn(tryGet(() => CSS.supports('@layer', ''), false)) },
+    { key: ':has() selector',    val: yn(tryGet(() => CSS.supports(':has(*)', ''), false)) },
+  ];
+  return buildSection({ id:'css', title:'CSS & Preferences', dot:'var(--purple)', rows });
+}
+
+// 13. Page Info
+function sectionPage() {
+  return buildSection({ id:'page', title:'Page Info', dot:'var(--gray)', rows: [
+    { key: 'URL',       val: `<span class="val-str" style="font-size:11px;word-break:break-all">${esc(location.href)}</span>` },
+    { key: 'Origin',    val: str(location.origin) },
+    { key: 'Protocol',  val: str(location.protocol) },
+    { key: 'Host',      val: str(location.host) },
+    { key: 'Pathname',  val: str(location.pathname) },
+    { key: 'Referrer',  val: document.referrer ? str(document.referrer) : `<span class="val-na">None</span>` },
+    { key: 'Char Set',  val: str(document.characterSet) },
+    { key: 'Dir',       val: str(document.dir || 'ltr') },
+    { key: 'Compat Mode',val: str(document.compatMode) },
+  ]});
+}
+
+// ─────────────────────────────────────────────
+// Render all
+// ─────────────────────────────────────────────
+function render() {
+  const sections = [
+    sectionBasic(),
+    sectionScreen(),
+    sectionHardware(),
+    sectionNetwork(),
+    sectionLocation(),
+    sectionStorage(),
+    sectionSecurity(),
+    sectionCSS(),
+    sectionMedia(),
+    sectionAPIs(),
+    sectionPerf(),
+    sectionPage(),
+    sectionUA(),
+  ];
+  document.getElementById('main').innerHTML = sections.join('');
+}
+
+// ─────────────────────────────────────────────
+// Live clock
+// ─────────────────────────────────────────────
+function tick() {
+  const now = new Date();
+  const ts = now.toLocaleTimeString();
+  const ds = now.toLocaleDateString(undefined, { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+  const ht = document.getElementById('header-time');
+  const lt = document.getElementById('live-time');
+  if (ht) ht.innerHTML = `${esc(ds)}<br>${esc(ts)}`;
+  if (lt) lt.textContent = `${ds}  ${ts}`;
+}
+
+// ─────────────────────────────────────────────
+// Battery async
+// ─────────────────────────────────────────────
+async function loadBattery() {
+  if (!('getBattery' in nav)) return;
+  try {
+    const bat = await nav.getBattery();
+    const sec = document.getElementById('sec-hw');
+    if (!sec) return;
+    const body = sec.querySelector('.section-body');
+    const rows = [
+      { key: 'Battery Level',   val: `<span class="val-num">${(bat.level * 100).toFixed(0)}</span>% <div class="bar-wrap"><div class="bar-fill" style="width:${bat.level*100}%;background:${bat.level > 0.2 ? 'var(--green)' : 'var(--red)'}"></div></div>` },
+      { key: 'Charging',        val: yn(bat.charging) },
+      { key: 'Charge Time',     val: bat.chargingTime === Infinity ? `<span class="val-na">∞</span>` : num(bat.chargingTime, 's') },
+      { key: 'Discharge Time',  val: bat.dischargingTime === Infinity ? `<span class="val-na">∞</span>` : num(bat.dischargingTime, 's') },
+    ];
+    const div = document.createElement('div');
+    div.innerHTML = rows.map(r => buildRow(r)).join('');
+    body.appendChild(div);
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// High-res timer FPS
+// ─────────────────────────────────────────────
+function measureFPS() {
+  const sec = document.getElementById('sec-perf');
+  if (!sec) return;
+  let frames = 0, last = performance.now();
+  function loop(ts) {
+    frames++;
+    if (ts - last >= 1000) {
+      const fps = frames;
+      frames = 0; last = ts;
+      const body = sec.querySelector('.section-body');
+      let fpsRow = sec.querySelector('#fps-row');
+      if (!fpsRow) {
+        fpsRow = document.createElement('div');
+        fpsRow.id = 'fps-row';
+        fpsRow.innerHTML = buildRow({ key: 'Approx. FPS', val: `<span class="val-num" id="fps-val">${fps}</span>` });
+        body.prepend(fpsRow);
+      } else {
+        const el = document.getElementById('fps-val');
+        if (el) el.textContent = fps;
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+
+// ─────────────────────────────────────────────
+// Storage estimate
+// ─────────────────────────────────────────────
+async function loadStorageEstimate() {
+  if (!nav.storage?.estimate) return;
+  try {
+    const est = await nav.storage.estimate();
+    const sec = document.getElementById('sec-storage');
+    if (!sec) return;
+    const body = sec.querySelector('.section-body');
+    const used = (est.usage / 1048576).toFixed(1);
+    const quota = (est.quota / 1073741824).toFixed(2);
+    const pct = Math.round(est.usage / est.quota * 100);
+    const div = document.createElement('div');
+    div.innerHTML = [
+      { key: 'Storage Used',  val: `<span class="val-num">${used}</span> MB <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:var(--blue)"></div></div>` },
+      { key: 'Storage Quota', val: num(quota, 'GB') },
+    ].map(r => buildRow(r)).join('');
+    body.appendChild(div);
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+render();
+tick();
+setInterval(tick, 1000);
+loadBattery();
+measureFPS();
+loadStorageEstimate();
+</script>
+</body>
+</html>
