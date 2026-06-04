@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>零宽字符隐写 - 文本秘密编码器</title>
+    <style>
+        :root {
+            --bg_h: #1d2021;
+            --bg: #282828;
+            --bg_s: #32302f;
+            --bg1: #3c3836;
+            --bg2: #504945;
+            --bg3: #665c54;
+            --bg4: #7c6f64;
+            --fg: #fbf1c7;
+            --fg1: #ebdbb2;
+            --fg2: #d5c4a1;
+            --fg3: #bdae93;
+            --fg4: #a89984;
+            --red: #fb4934;
+            --green: #b8bb26;
+            --yellow: #fabd2f;
+            --blue: #83a598;
+            --purple: #d3869b;
+            --aqua: #8ec07c;
+            --gray: #928374;
+            --orange: #fe8019;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458588;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --gray-dim: #a89984;
+            --orange-dim: #d65d0e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg_h);
+            color: var(--fg);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-top: 8px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 8px 0 4px;
+        }
+        .header .icon {
+            font-size: 2.4rem;
+            display: block;
+            margin-bottom: 2px;
+            filter: grayscale(0.1);
+            letter-spacing: 2px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--fg);
+            letter-spacing: 0.02em;
+            margin: 0;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--fg4);
+            margin-top: 2px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Cards layout */
+        .cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        @media (min-width: 720px) {
+            .cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (min-width: 900px) {
+            body {
+                padding: 24px;
+            }
+            .container {
+                gap: 24px;
+            }
+            .cards {
+                gap: 24px;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--bg1);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: border-color 0.25s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+        .card:hover {
+            border-color: var(--bg2);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-header .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .card-icon.encode-icon {
+            background: rgba(142, 192, 124, 0.15);
+            color: var(--aqua);
+        }
+        .card-icon.decode-icon {
+            background: rgba(131, 165, 152, 0.15);
+            color: var(--blue);
+        }
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--fg1);
+            letter-spacing: 0.02em;
+            margin: 0;
+        }
+
+        /* Form elements */
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .field label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--fg3);
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .field label .badge {
+            font-size: 0.68rem;
+            font-weight: 500;
+            color: var(--fg4);
+            background: var(--bg_s);
+            padding: 2px 8px;
+            border-radius: 10px;
+            letter-spacing: 0.02em;
+            text-transform: none;
+        }
+        textarea {
+            width: 100%;
+            background: var(--bg_s);
+            color: var(--fg);
+            border: 1.5px solid var(--bg2);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'PingFang SC', 'Microsoft YaHei', monospace;
+            line-height: 1.55;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+            min-height: 70px;
+        }
+        textarea:focus {
+            border-color: var(--aqua);
+            box-shadow: 0 0 0 3px rgba(142, 192, 124, 0.08);
+        }
+        .card.decode-card textarea:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.08);
+        }
+        textarea::placeholder {
+            color: var(--fg4);
+            opacity: 0.65;
+            font-style: italic;
+        }
+        textarea.result-area {
+            background: var(--bg_s);
+            border-style: dashed;
+            border-color: var(--bg3);
+            min-height: 56px;
+            cursor: default;
+            color: var(--fg2);
+            font-size: 0.85rem;
+        }
+        textarea.result-area.has-data {
+            border-color: var(--aqua-dim);
+            border-style: solid;
+            color: var(--fg);
+        }
+        .card.decode-card textarea.result-area.has-data {
+            border-color: var(--blue-dim);
+            border-style: solid;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        button:active {
+            transform: scale(0.96);
+            transition: transform 0.08s ease;
+        }
+        .btn-primary {
+            background: var(--aqua);
+            color: #1d2021;
+            box-shadow: 0 2px 8px rgba(142, 192, 124, 0.25);
+        }
+        .btn-primary:hover {
+            background: #9ccd8a;
+            box-shadow: 0 4px 14px rgba(142, 192, 124, 0.35);
+        }
+        .btn-primary:active {
+            background: #7db56e;
+        }
+        .btn-decode {
+            background: var(--blue);
+            color: #1d2021;
+            box-shadow: 0 2px 8px rgba(131, 165, 152, 0.25);
+        }
+        .btn-decode:hover {
+            background: #93b5a8;
+            box-shadow: 0 4px 14px rgba(131, 165, 152, 0.35);
+        }
+        .btn-decode:active {
+            background: #73958a;
+        }
+        .btn-secondary {
+            background: var(--bg1);
+            color: var(--fg2);
+            border: 1.5px solid var(--bg3);
+        }
+        .btn-secondary:hover {
+            background: var(--bg2);
+            border-color: var(--bg4);
+            color: var(--fg);
+        }
+        .btn-copy {
+            background: var(--bg_s);
+            color: var(--fg3);
+            border: 1.5px solid var(--bg3);
+            font-size: 0.8rem;
+            padding: 7px 14px;
+            border-radius: 6px;
+        }
+        .btn-copy:hover {
+            background: var(--bg1);
+            border-color: var(--bg4);
+            color: var(--fg1);
+        }
+        .btn-copy.copied {
+            background: rgba(184, 187, 38, 0.15);
+            border-color: var(--green);
+            color: var(--green);
+            transition: all 0.3s ease;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--fg4);
+            padding: 4px 0;
+        }
+        .stat-item {
+            background: var(--bg_s);
+            padding: 5px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid transparent;
+        }
+        .stat-item.highlight {
+            border-color: var(--aqua-dim);
+            color: var(--aqua);
+            background: rgba(142, 192, 124, 0.06);
+        }
+        .decode-card .stat-item.highlight {
+            border-color: var(--blue-dim);
+            color: var(--blue);
+            background: rgba(131, 165, 152, 0.06);
+        }
+        .stat-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .stat-dot.green {
+            background: var(--aqua);
+        }
+        .stat-dot.blue {
+            background: var(--blue);
+        }
+        .stat-dot.yellow {
+            background: var(--yellow);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--bg2);
+            color: var(--fg1);
+            padding: 10px 22px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+            border: 1px solid var(--bg3);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            border-color: var(--green);
+            background: rgba(184, 187, 38, 0.2);
+            color: var(--green);
+        }
+        .toast.error {
+            border-color: var(--red-dim);
+            background: rgba(251, 73, 52, 0.15);
+            color: var(--red);
+        }
+
+        /* Info hint */
+        .info-hint {
+            font-size: 0.72rem;
+            color: var(--fg4);
+            line-height: 1.5;
+            padding: 8px 12px;
+            background: var(--bg_s);
+            border-radius: 8px;
+            border-left: 3px solid var(--bg3);
+            letter-spacing: 0.02em;
+        }
+        .info-hint strong {
+            color: var(--fg3);
+            font-weight: 600;
+        }
+        .info-hint code {
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            background: var(--bg1);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            color: var(--orange);
+            letter-spacing: 0.04em;
+        }
+
+        /* Divider in card */
+        .card-divider {
+            border: none;
+            border-top: 1px solid var(--bg1);
+            margin: 2px 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .card {
+                padding: 14px 12px;
+                gap: 10px;
+                border-radius: 10px;
+            }
+            textarea {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+                min-height: 56px;
+                border-radius: 6px;
+            }
+            button {
+                font-size: 0.82rem;
+                padding: 9px 14px;
+                border-radius: 6px;
+            }
+            .btn-row {
+                gap: 7px;
+            }
+            .header h1 {
+                font-size: 1.35rem;
+            }
+            .header .icon {
+                font-size: 2rem;
+            }
+            .card-header h2 {
+                font-size: 0.95rem;
+            }
+            .stats {
+                gap: 5px;
+            }
+            .stat-item {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+        }
+        @media (max-width: 360px) {
+            body {
+                padding: 8px;
+            }
+            .card {
+                padding: 10px 8px;
+                gap: 8px;
+            }
+            textarea {
+                font-size: 0.8rem;
+                padding: 8px 10px;
+            }
+            button {
+                font-size: 0.78rem;
+                padding: 8px 11px;
+            }
+            .btn-row {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <span class="icon">🔏</span>
+            <h1>零宽字符隐写</h1>
+            <p class="subtitle">将秘密文本编码为不可见字符，隐藏于载体之中</p>
+        </div>
+
+        <!-- Cards -->
+        <div class="cards">
+            <!-- Encode Card -->
+            <div class="card encode-card" id="encodeCard">
+                <div class="card-header">
+                    <div class="card-icon encode-icon">📝</div>
+                    <h2>编码 · 隐藏信息</h2>
+                </div>
+                <div class="field">
+                    <label for="coverText">
+                        载体文本 <span class="badge">公开可见</span>
+                    </label>
+                    <textarea id="coverText" rows="3" placeholder="输入用于承载秘密信息的公开文本，至少需要2个字符...">今天天气不错，适合出去散步。</textarea>
+                </div>
+                <div class="field">
+                    <label for="secretText">
+                        秘密文本 <span class="badge">将被隐藏</span>
+                    </label>
+                    <textarea id="secretText" rows="2" placeholder="输入你想隐藏的秘密信息...">你好，这是秘密！</textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-primary" id="encodeBtn" title="将秘密编码到载体中">
+                        🔒 编码隐藏
+                    </button>
+                    <button class="btn-secondary" id="clearEncodeBtn" title="清空编码相关输入">
+                        🗑️ 清空
+                    </button>
+                </div>
+                <hr class="card-divider">
+                <div class="field">
+                    <label for="encodeResult">
+                        编码结果 <span class="badge">含不可见字符</span>
+                    </label>
+                    <textarea id="encodeResult" rows="2" readonly class="result-area" placeholder="编码后的文本将显示在这里...&#10;（表面看起来与载体文本一致，但隐藏了秘密信息）"></textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-copy" id="copyEncodeBtn" disabled>
+                        📋 复制结果
+                    </button>
+                </div>
+                <div class="stats" id="encodeStats"></div>
+            </div>
+
+            <!-- Decode Card -->
+            <div class="card decode-card" id="decodeCard">
+                <div class="card-header">
+                    <div class="card-icon decode-icon">🔍</div>
+                    <h2>解码 · 提取信息</h2>
+                </div>
+                <div class="field">
+                    <label for="stegoText">
+                        含隐藏信息的文本 <span class="badge">粘贴到这里</span>
+                    </label>
+                    <textarea id="stegoText" rows="3" placeholder="将包含零宽字符隐藏信息的文本粘贴到这里..."></textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-decode" id="decodeBtn" title="从文本中提取隐藏信息">
+                        🔓 解码提取
+                    </button>
+                    <button class="btn-secondary" id="clearDecodeBtn" title="清空解码相关输入">
+                        🗑️ 清空
+                    </button>
+                </div>
+                <hr class="card-divider">
+                <div class="field">
+                    <label for="decodeResult">
+                        提取的秘密文本
+                    </label>
+                    <textarea id="decodeResult" rows="2" readonly class="result-area" placeholder="解码后的秘密文本将显示在这里..."></textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-copy" id="copyDecodeBtn" disabled>
+                        📋 复制秘密
+                    </button>
+                </div>
+                <div class="stats" id="decodeStats"></div>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="info-hint">
+            💡 <strong>原理说明：</strong>使用零宽空格 <code>U+200B</code> 和零宽不连字 <code>U+200C</code> 编码二进制数据，以零宽连字 <code>U+200D</code> 作为标记。所有不可见字符随机分布在载体文本的字符间隙中（不在开头和末尾），表面看起来与原文完全一致。支持所有 Unicode 字符。
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // ──────────────────────────────────────
+            // DOM 引用
+            // ──────────────────────────────────────
+            const coverTextEl = document.getElementById('coverText');
+            const secretTextEl = document.getElementById('secretText');
+            const encodeResultEl = document.getElementById('encodeResult');
+            const encodeBtn = document.getElementById('encodeBtn');
+            const clearEncodeBtn = document.getElementById('clearEncodeBtn');
+            const copyEncodeBtn = document.getElementById('copyEncodeBtn');
+            const encodeStatsEl = document.getElementById('encodeStats');
+
+            const stegoTextEl = document.getElementById('stegoText');
+            const decodeResultEl = document.getElementById('decodeResult');
+            const decodeBtn = document.getElementById('decodeBtn');
+            const clearDecodeBtn = document.getElementById('clearDecodeBtn');
+            const copyDecodeBtn = document.getElementById('copyDecodeBtn');
+            const decodeStatsEl = document.getElementById('decodeStats');
+            const toastEl = document.getElementById('toast');
+
+            // ──────────────────────────────────────
+            // 零宽字符定义
+            // ──────────────────────────────────────
+            const ZW_SPACE = '\u200B'; // Zero Width Space — 编码 bit 0
+            const ZW_NON_JOINER = '\u200C'; // Zero Width Non-Joiner — 编码 bit 1
+            const ZW_JOINER = '\u200D'; // Zero Width Joiner — 数据标记
+            const MARKER = ZW_JOINER + ZW_JOINER; // 双 ZWJ 作为起始标记
+
+            // 所有用于编码的零宽字符（用于收集）
+            const ALL_ZW_CHARS = new Set([ZW_SPACE, ZW_NON_JOINER, ZW_JOINER]);
+
+            // ──────────────────────────────────────
+            // Toast 工具
+            // ──────────────────────────────────────
+            let toastTimer = null;
+
+            function showToast(message, type = '') {
+                if (toastTimer) clearTimeout(toastTimer);
+                toastEl.textContent = message;
+                toastEl.className = 'toast ' + type + ' show';
+                toastTimer = setTimeout(() => {
+                    toastEl.className = 'toast';
+                }, 2200);
+            }
+
+            // ──────────────────────────────────────
+            // 编码函数
+            // ──────────────────────────────────────
+            function encode(coverText, secretText) {
+                // 使用 TextEncoder 将秘密文本转为 UTF-8 字节
+                const encoder = new TextEncoder();
+                const secretBytes = encoder.encode(secretText);
+                const byteCount = secretBytes.length;
+
+                // 构建二进制序列：
+                // - 16位长度前缀（UTF-8字节数）
+                // - 每个字节8位
+                let binary = '';
+                binary += byteCount.toString(2).padStart(16, '0');
+                for (let i = 0; i < byteCount; i++) {
+                    binary += secretBytes[i].toString(2).padStart(8, '0');
+                }
+
+                // 转换为零宽字符序列
+                let zwSequence = MARKER; // 起始标记
+                for (const bit of binary) {
+                    zwSequence += (bit === '0') ? ZW_SPACE : ZW_NON_JOINER;
+                }
+
+                const totalZW = zwSequence.length;
+                const coverLen = coverText.length;
+                const gapCount = coverLen - 1; // 内部间隙数
+
+                if (gapCount <= 0) return null; // 载体太短
+
+                // 随机分配每个间隙的零宽字符数量（保持顺序）
+                const distribution = new Array(gapCount).fill(0);
+                for (let i = 0; i < totalZW; i++) {
+                    const gapIndex = Math.floor(Math.random() * gapCount);
+                    distribution[gapIndex]++;
+                }
+
+                // 构建结果字符串
+                let result = '';
+                let zwIdx = 0;
+                for (let i = 0; i < coverLen; i++) {
+                    result += coverText[i];
+                    if (i < gapCount && distribution[i] > 0) {
+                        result += zwSequence.substring(zwIdx, zwIdx + distribution[i]);
+                        zwIdx += distribution[i];
+                    }
+                }
+
+                return {
+                    result,
+                    totalZW,
+                    gapCount,
+                    distribution,
+                    byteCount,
+                    coverLen,
+                };
+            }
+
+            // ──────────────────────────────────────
+            // 解码函数
+            // ──────────────────────────────────────
+            function decode(text) {
+                // 按顺序收集所有相关零宽字符
+                const collected = [];
+                for (const char of text) {
+                    if (ALL_ZW_CHARS.has(char)) {
+                        collected.push(char);
+                    }
+                }
+
+                if (collected.length === 0) {
+                    return { success: false, error: '未检测到任何零宽字符' };
+                }
+
+                // 查找标记（双 ZWJ）
+                const collectedStr = collected.join('');
+                const markerIdx = collectedStr.indexOf(MARKER);
+                if (markerIdx === -1) {
+                    return { success: false, error: '未找到数据标记，可能不含隐藏信息' };
+                }
+
+                // 提取标记之后的所有 ZW_SPACE 和 ZW_NON_JOINER
+                const dataChars = [];
+                for (let i = markerIdx + MARKER.length; i < collected.length; i++) {
+                    const c = collected[i];
+                    if (c === ZW_SPACE || c === ZW_NON_JOINER) {
+                        dataChars.push(c);
+                    }
+                    // 忽略额外的 ZW_JOINER（可能是干扰或多次编码的标记）
+                }
+
+                if (dataChars.length < 16) {
+                    return { success: false, error: '数据不完整：无法读取长度前缀（需要至少16位）' };
+                }
+
+                // 转为二进制字符串
+                let binary = '';
+                for (const c of dataChars) {
+                    binary += (c === ZW_SPACE) ? '0' : '1';
+                }
+
+                // 解析长度前缀（前16位）
+                const lenBits = binary.substring(0, 16);
+                const byteCount = parseInt(lenBits, 2);
+                if (isNaN(byteCount) || byteCount < 0 || byteCount > 100000) {
+                    return { success: false, error: '数据损坏：无效的长度值' };
+                }
+
+                const requiredBits = 16 + byteCount * 8;
+                if (binary.length < requiredBits) {
+                    return {
+                        success: false,
+                        error: `数据不完整：需要 ${requiredBits} 位，实际只有 ${binary.length} 位（${byteCount} 字节数据）`,
+                    };
+                }
+
+                // 提取字节数据
+                const bytes = new Uint8Array(byteCount);
+                for (let i = 0; i < byteCount; i++) {
+                    const start = 16 + i * 8;
+                    const byteBits = binary.substring(start, start + 8);
+                    const byteVal = parseInt(byteBits, 2);
+                    if (isNaN(byteVal)) {
+                        return { success: false, error: `数据损坏：第 ${i + 1} 个字节解析失败` };
+                    }
+                    bytes[i] = byteVal;
+                }
+
+                // 使用 TextDecoder 解码为字符串
+                const decoder = new TextDecoder('utf-8', { fatal: true });
+                let secret;
+                try {
+                    secret = decoder.decode(bytes);
+                } catch (e) {
+                    return { success: false, error: 'UTF-8 解码失败，数据可能已损坏' };
+                }
+
+                return {
+                    success: true,
+                    secret,
+                    byteCount,
+                    totalZWCollected: collected.length,
+                    markerPosition: markerIdx,
+                    dataBitsUsed: byteCount * 8 + 16,
+                };
+            }
+
+            // ──────────────────────────────────────
+            // 统计零宽字符（用于显示）
+            // ──────────────────────────────────────
+            function countZWChars(text) {
+                let count = 0;
+                let zwsp = 0,
+                    zwnj = 0,
+                    zwj = 0;
+                for (const char of text) {
+                    if (char === ZW_SPACE) { count++;
+                        zwsp++; } else if (char === ZW_NON_JOINER) { count++;
+                        zwnj++; } else if (char === ZW_JOINER) { count++;
+                        zwj++; }
+                }
+                return { total: count, zwsp, zwnj, zwj };
+            }
+
+            // ──────────────────────────────────────
+            // 编码按钮处理
+            // ──────────────────────────────────────
+            encodeBtn.addEventListener('click', () => {
+                const coverText = coverTextEl.value;
+                const secretText = secretTextEl.value.trim();
+
+                // 验证
+                if (!secretText) {
+                    showToast('请输入秘密文本', 'error');
+                    secretTextEl.focus();
+                    return;
+                }
+                if (coverText.length < 2) {
+                    showToast('载体文本至少需要2个字符（需要字符间隙来插入零宽字符）', 'error');
+                    coverTextEl.focus();
+                    return;
+                }
+
+                const encodeResult = encode(coverText, secretText);
+
+                if (!encodeResult) {
+                    showToast('编码失败：载体文本太短', 'error');
+                    return;
+                }
+
+                // 显示结果
+                encodeResultEl.value = encodeResult.result;
+                encodeResultEl.classList.add('has-data');
+                copyEncodeBtn.disabled = false;
+
+                // 统计信息
+                const avgPerGap = (encodeResult.totalZW / encodeResult.gapCount).toFixed(1);
+                encodeStatsEl.innerHTML = `
+                    <span class="stat-item highlight">
+                        <span class="stat-dot green"></span> 已嵌入 ${encodeResult.totalZW} 个零宽字符
+                    </span>
+                    <span class="stat-item">
+                        📦 ${encodeResult.byteCount} 字节隐藏数据
+                    </span>
+                    <span class="stat-item">
+                        📍 ${encodeResult.gapCount} 个字符间隙，平均每间隙 ${avgPerGap} 个
+                    </span>
+                    <span class="stat-item">
+                        📏 表面 ${encodeResult.coverLen} 字符 · 实际 ${encodeResult.result.length} 字符
+                    </span>
+                `;
+
+                showToast('✅ 编码成功！秘密已隐藏到载体中', 'success');
+            });
+
+            // ──────────────────────────────────────
+            // 解码按钮处理
+            // ──────────────────────────────────────
+            decodeBtn.addEventListener('click', () => {
+                const stegoText = stegoTextEl.value;
+
+                if (!stegoText.trim()) {
+                    showToast('请粘贴包含隐藏信息的文本', 'error');
+                    stegoTextEl.focus();
+                    return;
+                }
+
+                const zwCounts = countZWChars(stegoText);
+                if (zwCounts.total === 0) {
+                    showToast('未检测到零宽字符，该文本可能不含隐藏信息', 'error');
+                    decodeStatsEl.innerHTML = `
+                        <span class="stat-item">⚠️ 未检测到零宽字符</span>
+                    `;
+                    decodeResultEl.value = '';
+                    decodeResultEl.classList.remove('has-data');
+                    copyDecodeBtn.disabled = true;
+                    return;
+                }
+
+                const decodeResult = decode(stegoText);
+
+                if (!decodeResult.success) {
+                    showToast('解码失败：' + decodeResult.error, 'error');
+                    decodeResultEl.value = '';
+                    decodeResultEl.classList.remove('has-data');
+                    copyDecodeBtn.disabled = true;
+                    decodeStatsEl.innerHTML = `
+                        <span class="stat-item">🔍 检测到 ${zwCounts.total} 个零宽字符</span>
+                        <span class="stat-item" style="color:var(--red-dim);">❌ ${decodeResult.error}</span>
+                    `;
+                    return;
+                }
+
+                // 显示解码结果
+                decodeResultEl.value = decodeResult.secret;
+                decodeResultEl.classList.add('has-data');
+                copyDecodeBtn.disabled = false;
+
+                decodeStatsEl.innerHTML = `
+                    <span class="stat-item highlight">
+                        <span class="stat-dot blue"></span> 成功提取 ${decodeResult.byteCount} 字节秘密
+                    </span>
+                    <span class="stat-item">
+                        🔍 文本中共 ${zwCounts.total} 个零宽字符
+                    </span>
+                    <span class="stat-item">
+                        📊 使用了 ${decodeResult.dataBitsUsed} 位编码数据
+                    </span>
+                `;
+
+                showToast('✅ 解码成功！秘密文本已提取', 'success');
+            });
+
+            // ──────────────────────────────────────
+            // 复制按钮
+            // ──────────────────────────────────────
+            copyEncodeBtn.addEventListener('click', async () => {
+                const text = encodeResultEl.value;
+                if (!text) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyEncodeBtn.textContent = '✅ 已复制';
+                    copyEncodeBtn.classList.add('copied');
+                    showToast('已复制到剪贴板（含不可见字符）', 'success');
+                    setTimeout(() => {
+                        copyEncodeBtn.textContent = '📋 复制结果';
+                        copyEncodeBtn.classList.remove('copied');
+                    }, 1800);
+                } catch (err) {
+                    // 回退方案
+                    encodeResultEl.select();
+                    document.execCommand('copy');
+                    showToast('已复制（回退方式）', 'success');
+                    setTimeout(() => {
+                        copyEncodeBtn.textContent = '📋 复制结果';
+                        copyEncodeBtn.classList.remove('copied');
+                    }, 1800);
+                }
+            });
+
+            copyDecodeBtn.addEventListener('click', async () => {
+                const text = decodeResultEl.value;
+                if (!text) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyDecodeBtn.textContent = '✅ 已复制';
+                    copyDecodeBtn.classList.add('copied');
+                    showToast('秘密文本已复制', 'success');
+                    setTimeout(() => {
+                        copyDecodeBtn.textContent = '📋 复制秘密';
+                        copyDecodeBtn.classList.remove('copied');
+                    }, 1800);
+                } catch (err) {
+                    decodeResultEl.select();
+                    document.execCommand('copy');
+                    showToast('已复制（回退方式）', 'success');
+                    setTimeout(() => {
+                        copyDecodeBtn.textContent = '📋 复制秘密';
+                        copyDecodeBtn.classList.remove('copied');
+                    }, 1800);
+                }
+            });
+
+            // ──────────────────────────────────────
+            // 清空按钮
+            // ──────────────────────────────────────
+            clearEncodeBtn.addEventListener('click', () => {
+                coverTextEl.value = '';
+                secretTextEl.value = '';
+                encodeResultEl.value = '';
+                encodeResultEl.classList.remove('has-data');
+                copyEncodeBtn.disabled = true;
+                encodeStatsEl.innerHTML = '';
+                coverTextEl.focus();
+                showToast('编码区域已清空');
+            });
+
+            clearDecodeBtn.addEventListener('click', () => {
+                stegoTextEl.value = '';
+                decodeResultEl.value = '';
+                decodeResultEl.classList.remove('has-data');
+                copyDecodeBtn.disabled = true;
+                decodeStatsEl.innerHTML = '';
+                stegoTextEl.focus();
+                showToast('解码区域已清空');
+            });
+
+            // ──────────────────────────────────────
+            // 实时统计：在解码区输入时显示零宽字符计数
+            // ──────────────────────────────────────
+            stegoTextEl.addEventListener('input', () => {
+                const zwCounts = countZWChars(stegoTextEl.value);
+                if (zwCounts.total > 0 && !decodeResultEl.value) {
+                    decodeStatsEl.innerHTML = `
+                        <span class="stat-item">
+                            🔍 检测到 ${zwCounts.total} 个零宽字符
+                            (ZWSP:${zwCounts.zwsp} ZWNJ:${zwCounts.zwnj} ZWJ:${zwCounts.zwj})
+                        </span>
+                        <span class="stat-item" style="color:var(--yellow-dim);">
+                            💡 点击"解码提取"按钮查看隐藏信息
+                        </span>
+                    `;
+                } else if (zwCounts.total === 0 && !decodeResultEl.value) {
+                    decodeStatsEl.innerHTML = '';
+                }
+            });
+
+            // 编码区载体文本统计
+            coverTextEl.addEventListener('input', () => {
+                const len = coverTextEl.value.length;
+                if (len > 0 && len < 2 && !encodeResultEl.value) {
+                    encodeStatsEl.innerHTML = `
+                        <span class="stat-item" style="color:var(--yellow-dim);">
+                            ⚠️ 载体文本仅 ${len} 个字符，至少需要2个字符才能嵌入
+                        </span>
+                    `;
+                } else if (len >= 2 && !encodeResultEl.value) {
+                    encodeStatsEl.innerHTML = `
+                        <span class="stat-item">
+                            📏 载体文本 ${len} 字符 · ${len - 1} 个可用间隙
+                        </span>
+                    `;
+                } else if (len === 0 && !encodeResultEl.value) {
+                    encodeStatsEl.innerHTML = '';
+                }
+            });
+
+            // ──────────────────────────────────────
+            // 键盘快捷键
+            // ──────────────────────────────────────
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+Enter 触发编码
+                if (e.ctrlKey && e.key === 'Enter' && document.activeElement) {
+                    const activeEl = document.activeElement;
+                    const encodeCard = document.getElementById('encodeCard');
+                    const decodeCard = document.getElementById('decodeCard');
+                    if (encodeCard.contains(activeEl)) {
+                        e.preventDefault();
+                        encodeBtn.click();
+                    } else if (decodeCard.contains(activeEl)) {
+                        e.preventDefault();
+                        decodeBtn.click();
+                    }
+                }
+            });
+
+            // ──────────────────────────────────────
+            // 初始化状态
+            // ──────────────────────────────────────
+            copyEncodeBtn.disabled = true;
+            copyDecodeBtn.disabled = true;
+            encodeStatsEl.innerHTML = '';
+            decodeStatsEl.innerHTML = '';
+
+            // 显示初始载体文本的统计
+            const initCoverLen = coverTextEl.value.length;
+            if (initCoverLen >= 2) {
+                encodeStatsEl.innerHTML = `
+                    <span class="stat-item">
+                        📏 载体文本 ${initCoverLen} 字符 · ${initCoverLen - 1} 个可用间隙
+                    </span>
+                `;
+            }
+
+            console.log('%c🔏 零宽字符隐写工具已就绪 %c| %c使用 Gruvbox 暗黑主题',
+                'color:#b8bb26;font-weight:bold;',
+                'color:#a89984;',
+                'color:#83a598;');
+            console.log('%c零宽字符: ZWSP(U+200B)=bit0 | ZWNJ(U+200C)=bit1 | ZWJ(U+200D)=标记',
+                'color:#928374;font-size:0.85em;');
+            console.log('%c支持所有 Unicode 字符 · UTF-8 编码 · 随机间隙分布',
+                'color:#7c6f64;font-size:0.8em;');
+        })();
+    </script>
+</body>
+</html>

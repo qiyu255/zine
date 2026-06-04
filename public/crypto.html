@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenSSL 加解密工具</title>
+    <style>
+        :root {
+            --bg_h: #1d2021;
+            --bg: #282828;
+            --bg_s: #32302f;
+            --bg1: #3c3836;
+            --bg2: #504945;
+            --bg3: #665c54;
+            --bg4: #7c6f64;
+            --fg: #fbf1c7;
+            --fg1: #ebdbb2;
+            --fg2: #d5c4a1;
+            --fg3: #bdae93;
+            --fg4: #a89984;
+            --red: #fb4934;
+            --green: #b8bb26;
+            --yellow: #fabd2f;
+            --blue: #83a598;
+            --purple: #d3869b;
+            --aqua: #8ec07c;
+            --gray: #928374;
+            --orange: #fe8019;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458588;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --gray-dim: #a89984;
+            --orange-dim: #d65d0e;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s ease;
+            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', 'Menlo', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg_h);
+            color: var(--fg);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--bg1);
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .header-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            background: var(--bg_s);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--aqua);
+            flex-shrink: 0;
+            border: 1px solid var(--bg2);
+        }
+
+        .header-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--fg);
+            letter-spacing: -0.01em;
+        }
+        .header-subtitle {
+            font-size: 0.8rem;
+            color: var(--fg4);
+            font-weight: 400;
+            margin-top: -2px;
+        }
+
+        /* 模式切换标签 */
+        .mode-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg_s);
+            border-radius: var(--radius);
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--bg1);
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: calc(var(--radius) - 3px);
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: var(--font-sans);
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--fg3);
+            text-align: center;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+        .mode-tab.active {
+            background: var(--bg1);
+            color: var(--fg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .mode-tab:hover:not(.active) {
+            color: var(--fg2);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .mode-tab.encrypt-tab.active {
+            color: var(--aqua);
+        }
+        .mode-tab.decrypt-tab.active {
+            color: var(--yellow);
+        }
+
+        /* 表单行 */
+        .form-row {
+            margin-bottom: 14px;
+        }
+        .form-row.two-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--fg3);
+            margin-bottom: 5px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .form-label .optional {
+            font-weight: 400;
+            color: var(--fg4);
+            text-transform: none;
+            font-size: 0.72rem;
+            margin-left: 4px;
+        }
+
+        textarea,
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            background: var(--bg_s);
+            border: 1px solid var(--bg2);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            color: var(--fg);
+            font-family: var(--font-mono);
+            resize: vertical;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            line-height: 1.5;
+            outline: none;
+        }
+        textarea:focus,
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.12);
+        }
+        textarea {
+            min-height: 100px;
+            max-height: 280px;
+        }
+        textarea.output-area {
+            min-height: 90px;
+            max-height: 220px;
+            background: var(--bg_h);
+            border-color: var(--bg3);
+            cursor: default;
+        }
+        textarea.output-area:focus {
+            border-color: var(--bg3);
+            box-shadow: none;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input {
+            padding-right: 44px;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--fg4);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 1rem;
+            line-height: 1;
+            transition: color var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            min-height: 34px;
+        }
+        .toggle-password:hover {
+            color: var(--fg2);
+        }
+
+        select {
+            width: 100%;
+            background: var(--bg_s);
+            border: 1px solid var(--bg2);
+            border-radius: var(--radius-sm);
+            padding: 11px 14px;
+            font-size: 0.9rem;
+            color: var(--fg);
+            font-family: var(--font-sans);
+            cursor: pointer;
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a89984' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+        select:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.12);
+        }
+        select option {
+            background: var(--bg_s);
+            color: var(--fg);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 11px 22px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: var(--font-sans);
+            letter-spacing: 0.02em;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+            text-align: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background: var(--blue);
+            color: #1d2021;
+            flex: 1;
+            min-width: 120px;
+        }
+        .btn-primary:hover {
+            background: var(--blue-dim);
+            filter: brightness(1.15);
+            box-shadow: 0 4px 14px rgba(131, 165, 152, 0.25);
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+            transition: transform 0.08s ease;
+        }
+        .btn-secondary {
+            background: var(--bg1);
+            color: var(--fg2);
+            border: 1px solid var(--bg3);
+        }
+        .btn-secondary:hover {
+            background: var(--bg2);
+            color: var(--fg);
+        }
+        .btn-copy {
+            background: var(--bg1);
+            color: var(--aqua);
+            border: 1px solid var(--bg3);
+            font-size: 0.82rem;
+            padding: 8px 14px;
+        }
+        .btn-copy:hover {
+            background: var(--bg2);
+            border-color: var(--aqua-dim);
+            color: var(--aqua);
+        }
+        .btn-copy.copied {
+            background: var(--green-dim);
+            color: #1d2021;
+            border-color: var(--green-dim);
+            transition: all 0.25s ease;
+        }
+
+        .status-msg {
+            font-size: 0.78rem;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            display: none;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            line-height: 1.4;
+        }
+        .status-msg.show {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
+        .status-msg.success {
+            background: rgba(184, 187, 38, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(184, 187, 38, 0.3);
+        }
+        .status-msg.error {
+            background: rgba(251, 73, 52, 0.12);
+            color: var(--red);
+            border: 1px solid rgba(251, 73, 52, 0.3);
+        }
+        .status-msg.info {
+            background: rgba(131, 165, 152, 0.1);
+            color: var(--blue);
+            border: 1px solid rgba(131, 165, 152, 0.25);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .output-section {
+            margin-top: 6px;
+            position: relative;
+        }
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* 盐值信息标签 */
+        .salt-info {
+            font-size: 0.7rem;
+            color: var(--fg4);
+            font-family: var(--font-mono);
+            background: var(--bg_s);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--bg2);
+            word-break: break-all;
+            max-width: 100%;
+            display: none;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .salt-info.show {
+            display: block;
+        }
+        .salt-info span {
+            color: var(--yellow-dim);
+        }
+
+        /* 响应式 */
+        @media (max-width: 520px) {
+            .container {
+                padding: 18px 14px 16px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+            .header {
+                margin-bottom: 16px;
+                gap: 8px;
+            }
+            .header-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 18px;
+                border-radius: 5px;
+            }
+            .header-title {
+                font-size: 1.15rem;
+            }
+            .header-subtitle {
+                font-size: 0.7rem;
+            }
+            .mode-tab {
+                padding: 9px 10px;
+                font-size: 0.8rem;
+            }
+            .form-row.two-cols {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            textarea {
+                min-height: 80px;
+                font-size: 0.82rem;
+                padding: 10px 12px;
+            }
+            input[type="text"],
+            input[type="password"] {
+                font-size: 0.82rem;
+                padding: 10px 12px;
+            }
+            select {
+                font-size: 0.82rem;
+                padding: 10px 12px;
+                padding-right: 32px;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.82rem;
+            }
+            .btn-row {
+                gap: 8px;
+            }
+            .form-label {
+                font-size: 0.72rem;
+            }
+            .status-msg {
+                font-size: 0.7rem;
+            }
+            .toggle-password {
+                min-width: 30px;
+                min-height: 30px;
+                padding: 6px;
+            }
+        }
+        @media (max-width: 360px) {
+            .container {
+                padding: 12px 10px 12px;
+            }
+            .mode-tabs {
+                gap: 2px;
+                padding: 3px;
+            }
+            .mode-tab {
+                padding: 8px 6px;
+                font-size: 0.74rem;
+            }
+            .btn-row {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-icon">🔐</div>
+            <div>
+                <div class="header-title">OpenSSL 加解密</div>
+                <div class="header-subtitle">兼容 OpenSSL Salted 格式 · 客户端处理</div>
+            </div>
+        </div>
+
+        <!-- 模式切换 -->
+        <div class="mode-tabs" id="modeTabs">
+            <button class="mode-tab encrypt-tab active" data-mode="encrypt" id="tabEncrypt">
+                🔒 加密 Encrypt
+            </button>
+            <button class="mode-tab decrypt-tab" data-mode="decrypt" id="tabDecrypt">
+                🔓 解密 Decrypt
+            </button>
+        </div>
+
+        <!-- 加密模式特有：明文输入 -->
+        <div class="form-row" id="plaintextRow">
+            <label class="form-label" for="plaintextInput">明文 Plaintext</label>
+            <textarea id="plaintextInput" placeholder="输入要加密的文本...&#10;支持中文、英文、任意字符" rows="3"></textarea>
+        </div>
+
+        <!-- 解密模式特有：密文输入 -->
+        <div class="form-row" id="ciphertextRow" style="display:none;">
+            <label class="form-label" for="ciphertextInput">密文 Ciphertext <span class="optional">(Base64, OpenSSL Salted 格式)</span></label>
+            <textarea id="ciphertextInput" placeholder="粘贴 Base64 编码的 OpenSSL 密文..." rows="3"></textarea>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-row">
+            <label class="form-label" for="passwordInput">密码 Passphrase</label>
+            <div class="password-wrapper">
+                <input type="password" id="passwordInput" placeholder="输入加密/解密密码" autocomplete="off">
+                <button class="toggle-password" id="togglePwdBtn" title="显示/隐藏密码" type="button">
+                    👁️
+                </button>
+            </div>
+        </div>
+
+        <!-- 算法 & KDF -->
+        <div class="form-row two-cols">
+            <div>
+                <label class="form-label" for="algorithmSelect">加密算法</label>
+                <select id="algorithmSelect">
+                    <option value="aes-256-cbc" selected>AES-256-CBC</option>
+                    <option value="aes-192-cbc">AES-192-CBC</option>
+                    <option value="aes-128-cbc">AES-128-CBC</option>
+                    <option value="aes-256-gcm">AES-256-GCM</option>
+                    <option value="aes-128-gcm">AES-128-GCM</option>
+                    <option value="des-ede3-cbc">3DES-CBC (DES-EDE3)</option>
+                    <option value="des-cbc">DES-CBC</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="kdfSelect">密钥派生 KDF</label>
+                <select id="kdfSelect">
+                    <option value="md5" selected>MD5 (传统 OpenSSL)</option>
+                    <option value="sha256">SHA-256 (OpenSSL 1.1.0+)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 按钮 -->
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btnAction">
+                🔒 执行加密
+            </button>
+            <button class="btn btn-secondary" id="btnClear">
+                🗑️ 清空
+            </button>
+            <button class="btn btn-secondary" id="btnSwap" title="交换输入输出">
+                ⇄ 交换
+            </button>
+        </div>
+
+        <!-- 状态消息 -->
+        <div class="status-msg" id="statusMsg"></div>
+
+        <!-- 输出区域 -->
+        <div class="output-section" id="outputSection">
+            <div class="output-header">
+                <label class="form-label" id="outputLabel" style="margin-bottom:0;">密文输出</label>
+                <button class="btn btn-copy" id="btnCopy" title="复制到剪贴板">📋 复制</button>
+            </div>
+            <textarea class="output-area" id="outputArea" readonly rows="2" placeholder="输出结果将显示在这里..."></textarea>
+            <div class="salt-info" id="saltInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== DOM元素 ====================
+            const modeTabs = document.getElementById('modeTabs');
+            const tabEncrypt = document.getElementById('tabEncrypt');
+            const tabDecrypt = document.getElementById('tabDecrypt');
+            const plaintextRow = document.getElementById('plaintextRow');
+            const ciphertextRow = document.getElementById('ciphertextRow');
+            const plaintextInput = document.getElementById('plaintextInput');
+            const ciphertextInput = document.getElementById('ciphertextInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePwdBtn = document.getElementById('togglePwdBtn');
+            const algorithmSelect = document.getElementById('algorithmSelect');
+            const kdfSelect = document.getElementById('kdfSelect');
+            const btnAction = document.getElementById('btnAction');
+            const btnClear = document.getElementById('btnClear');
+            const btnSwap = document.getElementById('btnSwap');
+            const btnCopy = document.getElementById('btnCopy');
+            const outputArea = document.getElementById('outputArea');
+            const outputLabel = document.getElementById('outputLabel');
+            const statusMsg = document.getElementById('statusMsg');
+            const saltInfo = document.getElementById('saltInfo');
+
+            let currentMode = 'encrypt'; // 'encrypt' | 'decrypt'
+
+            // ==================== 工具函数 ====================
+            function arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            }
+
+            function base64ToArrayBuffer(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes.buffer;
+            }
+
+            function stringToArrayBuffer(str) {
+                const encoder = new TextEncoder();
+                return encoder.encode(str).buffer;
+            }
+
+            function arrayBufferToString(buffer) {
+                const decoder = new TextDecoder();
+                return decoder.decode(new Uint8Array(buffer));
+            }
+
+            function hexFromBytes(bytes) {
+                return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            function concatArrayBuffers(...buffers) {
+                const totalLength = buffers.reduce((sum, buf) => sum + buf.byteLength, 0);
+                const result = new Uint8Array(totalLength);
+                let offset = 0;
+                for (const buf of buffers) {
+                    result.set(new Uint8Array(buf), offset);
+                    offset += buf.byteLength;
+                }
+                return result.buffer;
+            }
+
+            // ==================== MD5 实现 (RFC 1321) ====================
+            function md5Hash(data) {
+                // data: ArrayBuffer
+                const msg = new Uint8Array(data);
+                const msgLen = msg.length;
+                // 填充
+                const paddedLen = (((msgLen + 8) >>> 6) + 1) << 6; // 向上取整到512位(64字节)的倍数
+                const padded = new Uint8Array(paddedLen);
+                padded.set(msg);
+                padded[msgLen] = 0x80;
+                // 写入原始长度（以位为单位，小端序）
+                const bitLen = msgLen * 8;
+                const lenView = new DataView(padded.buffer, paddedLen - 8, 8);
+                lenView.setUint32(0, bitLen & 0xFFFFFFFF, true);
+                lenView.setUint32(4, Math.floor(bitLen / 0x100000000), true);
+
+                // MD5初始值
+                let a = 0x67452301;
+                let b = 0xefcdab89;
+                let c = 0x98badcfe;
+                let d = 0x10325476;
+
+                // 每轮移位量
+                const S = [
+                    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+                    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+                    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+                    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+                ];
+
+                // T表: floor(2^32 * |sin(i)|)
+                const T = [];
+                for (let i = 0; i < 64; i++) {
+                    T[i] = Math.floor(0x100000000 * Math.abs(Math.sin(i + 1)));
+                }
+
+                // 处理每个512位块
+                for (let blockStart = 0; blockStart < paddedLen; blockStart += 64) {
+                    const block = new DataView(padded.buffer, blockStart, 64);
+                    const M = [];
+                    for (let i = 0; i < 16; i++) {
+                        M[i] = block.getUint32(i * 4, true);
+                    }
+
+                    let A = a,
+                        B = b,
+                        C = c,
+                        D = d;
+
+                    for (let i = 0; i < 64; i++) {
+                        let F, g;
+                        if (i < 16) {
+                            F = (B & C) | (~B & D);
+                            g = i;
+                        } else if (i < 32) {
+                            F = (D & B) | (~D & C);
+                            g = (5 * i + 1) % 16;
+                        } else if (i < 48) {
+                            F = B ^ C ^ D;
+                            g = (3 * i + 5) % 16;
+                        } else {
+                            F = C ^ (B | ~D);
+                            g = (7 * i) % 16;
+                        }
+                        const temp = D;
+                        D = C;
+                        C = B;
+                        const val = (A + F + T[i] + M[g]) >>> 0;
+                        B = (B + ((val << S[i]) | (val >>> (32 - S[i])))) >>> 0;
+                        A = temp;
+                    }
+
+                    a = (a + A) >>> 0;
+                    b = (b + B) >>> 0;
+                    c = (c + C) >>> 0;
+                    d = (d + D) >>> 0;
+                }
+
+                // 输出小端序字节
+                const result = new ArrayBuffer(16);
+                const resultView = new DataView(result);
+                resultView.setUint32(0, a, true);
+                resultView.setUint32(4, b, true);
+                resultView.setUint32(8, c, true);
+                resultView.setUint32(12, d, true);
+                return result;
+            }
+
+            // ==================== EVP_BytesToKey ====================
+            async function evpBytesToKey(password, salt, keyLen, ivLen, hashAlgo) {
+                // password: string, salt: ArrayBuffer(8字节), hashAlgo: 'md5'|'sha256'
+                const passwordBytes = stringToArrayBuffer(password);
+                const totalLen = keyLen + ivLen;
+                const derived = [];
+                let prevHash = new ArrayBuffer(0);
+
+                while (derived.reduce((s, b) => s + b.byteLength, 0) < totalLen) {
+                    const toHashParts = [prevHash, passwordBytes, salt];
+                    const toHash = concatArrayBuffers(...toHashParts);
+
+                    let hashResult;
+                    if (hashAlgo === 'md5') {
+                        hashResult = md5Hash(toHash);
+                    } else {
+                        hashResult = await crypto.subtle.digest('SHA-256', toHash);
+                    }
+                    derived.push(hashResult);
+                    prevHash = hashResult;
+                }
+
+                const combined = concatArrayBuffers(...derived);
+                const combinedBytes = new Uint8Array(combined);
+                const key = combinedBytes.slice(0, keyLen).buffer;
+                const iv = combinedBytes.slice(keyLen, keyLen + ivLen).buffer;
+                return { key, iv };
+            }
+
+            // ==================== 算法参数 ====================
+            function getAlgorithmParams(algoName) {
+                const params = {
+                    'aes-256-cbc': { name: 'AES-CBC', keyLen: 32, ivLen: 16, webCryptoName: 'AES-CBC' },
+                    'aes-192-cbc': { name: 'AES-CBC', keyLen: 24, ivLen: 16, webCryptoName: 'AES-CBC' },
+                    'aes-128-cbc': { name: 'AES-CBC', keyLen: 16, ivLen: 16, webCryptoName: 'AES-CBC' },
+                    'aes-256-gcm': { name: 'AES-GCM', keyLen: 32, ivLen: 12, webCryptoName: 'AES-GCM', tagLen: 128 },
+                    'aes-128-gcm': { name: 'AES-GCM', keyLen: 16, ivLen: 12, webCryptoName: 'AES-GCM', tagLen: 128 },
+                    'des-ede3-cbc': { name: '3DES-CBC', keyLen: 24, ivLen: 8, webCryptoName: 'DES-EDE3-CBC' },
+                    'des-cbc': { name: 'DES-CBC', keyLen: 8, ivLen: 8, webCryptoName: 'DES-CBC' },
+                };
+                return params[algoName] || null;
+            }
+
+            // ==================== 加密 ====================
+            async function encryptData(plaintext, password, algoName, hashAlgo) {
+                const params = getAlgorithmParams(algoName);
+                if (!params) throw new Error('不支持的算法: ' + algoName);
+
+                // 生成随机8字节盐
+                const salt = crypto.getRandomValues(new Uint8Array(8)).buffer;
+
+                // 派生密钥和IV
+                const { key, iv } = await evpBytesToKey(password, salt, params.keyLen, params.ivLen, hashAlgo);
+
+                // 导入密钥
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    key,
+                    params.webCryptoName,
+                    false,
+                    ['encrypt']
+                );
+
+                // 加密
+                const plaintextBytes = stringToArrayBuffer(plaintext);
+                const encryptParams = {
+                    name: params.webCryptoName,
+                    iv: iv,
+                };
+                if (params.tagLen) {
+                    encryptParams.tagLength = params.tagLen;
+                }
+
+                const ciphertext = await crypto.subtle.encrypt(
+                    encryptParams,
+                    cryptoKey,
+                    plaintextBytes
+                );
+
+                // 组装OpenSSL格式: Salted__ + salt + ciphertext
+                const saltedPrefix = new TextEncoder().encode('Salted__').buffer;
+                const opensslData = concatArrayBuffers(saltedPrefix, salt, ciphertext);
+
+                // Base64编码
+                const base64Output = arrayBufferToBase64(opensslData);
+
+                // 返回详细信息
+                return {
+                    base64: base64Output,
+                    saltHex: hexFromBytes(new Uint8Array(salt)),
+                    keyHex: hexFromBytes(new Uint8Array(key)),
+                    ivHex: hexFromBytes(new Uint8Array(iv)),
+                };
+            }
+
+            // ==================== 解密 ====================
+            async function decryptData(base64Input, password, algoName, hashAlgo) {
+                const params = getAlgorithmParams(algoName);
+                if (!params) throw new Error('不支持的算法: ' + algoName);
+
+                // Base64解码
+                let opensslData;
+                try {
+                    opensslData = base64ToArrayBuffer(base64Input.trim());
+                } catch (e) {
+                    throw new Error('Base64解码失败，请检查密文格式');
+                }
+
+                const dataBytes = new Uint8Array(opensslData);
+                if (dataBytes.length < 16) {
+                    throw new Error('密文数据太短，至少需要16字节（Salted__前缀8字节 + 盐8字节）');
+                }
+
+                // 检查Salted__前缀
+                const prefixBytes = dataBytes.slice(0, 8);
+                const prefixStr = new TextDecoder().decode(prefixBytes);
+                if (prefixStr !== 'Salted__') {
+                    throw new Error(
+                        '未检测到 "Salted__" 前缀。请确认密文是 OpenSSL Salted 格式（Base64编码，以 U2FsdGVkX1 开头）'
+                    );
+                }
+
+                // 提取盐和密文
+                const salt = dataBytes.slice(8, 16).buffer;
+                const ciphertextWithTag = dataBytes.slice(16).buffer;
+
+                if (ciphertextWithTag.byteLength === 0) {
+                    throw new Error('密文部分为空');
+                }
+
+                // 对于GCM，需要分离tag
+                let ciphertext = ciphertextWithTag;
+                if (params.tagLen) {
+                    const tagBytes = params.tagLen / 8;
+                    if (ciphertextWithTag.byteLength < tagBytes) {
+                        throw new Error('GCM密文太短，缺少认证标签');
+                    }
+                    // Web Crypto API期望密文和tag在一起，所以不需要分离
+                    // ciphertext已经包含了tag
+                }
+
+                // 派生密钥和IV
+                const { key, iv } = await evpBytesToKey(password, salt, params.keyLen, params.ivLen, hashAlgo);
+
+                // 导入密钥
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    key,
+                    params.webCryptoName,
+                    false,
+                    ['decrypt']
+                );
+
+                // 解密
+                const decryptParams = {
+                    name: params.webCryptoName,
+                    iv: iv,
+                };
+                if (params.tagLen) {
+                    decryptParams.tagLength = params.tagLen;
+                }
+
+                let plaintextBuffer;
+                try {
+                    plaintextBuffer = await crypto.subtle.decrypt(
+                        decryptParams,
+                        cryptoKey,
+                        ciphertext
+                    );
+                } catch (e) {
+                    if (e.name === 'OperationError') {
+                        throw new Error(
+                            '解密失败。可能原因：密码错误、算法不匹配、密文损坏、或GCM认证标签验证失败。请检查密码和算法选择是否正确。'
+                        );
+                    }
+                    throw new Error('解密失败: ' + (e.message || '未知错误'));
+                }
+
+                const plaintext = arrayBufferToString(plaintextBuffer);
+
+                return {
+                    plaintext: plaintext,
+                    saltHex: hexFromBytes(new Uint8Array(salt)),
+                    keyHex: hexFromBytes(new Uint8Array(key)),
+                    ivHex: hexFromBytes(new Uint8Array(iv)),
+                };
+            }
+
+            // ==================== UI逻辑 ====================
+            function setMode(mode) {
+                currentMode = mode;
+                if (mode === 'encrypt') {
+                    tabEncrypt.classList.add('active');
+                    tabDecrypt.classList.remove('active');
+                    plaintextRow.style.display = 'block';
+                    ciphertextRow.style.display = 'none';
+                    btnAction.textContent = '🔒 执行加密';
+                    outputLabel.textContent = '密文输出 Ciphertext (Base64)';
+                    outputArea.placeholder = '加密后的Base64密文将显示在这里...';
+                } else {
+                    tabDecrypt.classList.add('active');
+                    tabEncrypt.classList.remove('active');
+                    plaintextRow.style.display = 'none';
+                    ciphertextRow.style.display = 'block';
+                    btnAction.textContent = '🔓 执行解密';
+                    outputLabel.textContent = '明文输出 Plaintext';
+                    outputArea.placeholder = '解密后的明文将显示在这里...';
+                }
+                hideStatus();
+                hideSaltInfo();
+                // 不清空输出，保留之前的结果便于对比
+            }
+
+            function showStatus(type, message) {
+                statusMsg.className = 'status-msg show ' + type;
+                statusMsg.textContent = message;
+                statusMsg.style.display = 'block';
+            }
+
+            function hideStatus() {
+                statusMsg.className = 'status-msg';
+                statusMsg.style.display = 'none';
+            }
+
+            function showSaltInfo(saltHex, keyHex, ivHex) {
+                saltInfo.innerHTML =
+                    '<span>🧂 盐值 Salt:</span> ' + saltHex +
+                    ' &nbsp;|&nbsp; <span>🔑 密钥 Key:</span> ' + keyHex +
+                    ' &nbsp;|&nbsp; <span>📏 IV:</span> ' + ivHex;
+                saltInfo.classList.add('show');
+            }
+
+            function hideSaltInfo() {
+                saltInfo.classList.remove('show');
+            }
+
+            async function handleAction() {
+                hideStatus();
+                hideSaltInfo();
+                const algoName = algorithmSelect.value;
+                const hashAlgo = kdfSelect.value;
+                const password = passwordInput.value;
+
+                if (!password) {
+                    showStatus('error', '⚠️ 请输入密码');
+                    passwordInput.focus();
+                    return;
+                }
+
+                if (currentMode === 'encrypt') {
+                    const plaintext = plaintextInput.value;
+                    if (!plaintext) {
+                        showStatus('error', '⚠️ 请输入要加密的明文');
+                        plaintextInput.focus();
+                        return;
+                    }
+                    btnAction.disabled = true;
+                    btnAction.textContent = '⏳ 加密中...';
+                    try {
+                        const result = await encryptData(plaintext, password, algoName, hashAlgo);
+                        outputArea.value = result.base64;
+                        showSaltInfo(result.saltHex, result.keyHex, result.ivHex);
+                        showStatus('success',
+                            '✅ 加密成功！输出为 OpenSSL 兼容格式 (Base64)，可直接用于 openssl enc -d 解密');
+                    } catch (e) {
+                        showStatus('error', '❌ 加密失败: ' + e.message);
+                        outputArea.value = '';
+                    } finally {
+                        btnAction.disabled = false;
+                        btnAction.textContent = '🔒 执行加密';
+                    }
+                } else {
+                    const ciphertext = ciphertextInput.value.trim();
+                    if (!ciphertext) {
+                        showStatus('error', '⚠️ 请输入Base64密文');
+                        ciphertextInput.focus();
+                        return;
+                    }
+                    btnAction.disabled = true;
+                    btnAction.textContent = '⏳ 解密中...';
+                    try {
+                        const result = await decryptData(ciphertext, password, algoName, hashAlgo);
+                        outputArea.value = result.plaintext;
+                        showSaltInfo(result.saltHex, result.keyHex, result.ivHex);
+                        showStatus('success', '✅ 解密成功！');
+                    } catch (e) {
+                        showStatus('error', '❌ 解密失败: ' + e.message);
+                        outputArea.value = '';
+                    } finally {
+                        btnAction.disabled = false;
+                        btnAction.textContent = '🔓 执行解密';
+                    }
+                }
+            }
+
+            async function handleCopy() {
+                const text = outputArea.value;
+                if (!text) {
+                    showStatus('info', 'ℹ️ 没有可复制的内容');
+                    return;
+                }
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(text);
+                    } else {
+                        // 回退方案
+                        outputArea.select();
+                        outputArea.setSelectionRange(0, 99999);
+                        document.execCommand('copy');
+                        outputArea.blur();
+                    }
+                    btnCopy.textContent = '✅ 已复制';
+                    btnCopy.classList.add('copied');
+                    setTimeout(() => {
+                        btnCopy.textContent = '📋 复制';
+                        btnCopy.classList.remove('copied');
+                    }, 1800);
+                    showStatus('success', '📋 已复制到剪贴板');
+                } catch (e) {
+                    showStatus('error', '❌ 复制失败，请手动选择复制');
+                }
+            }
+
+            function handleClear() {
+                plaintextInput.value = '';
+                ciphertextInput.value = '';
+                passwordInput.value = '';
+                outputArea.value = '';
+                hideStatus();
+                hideSaltInfo();
+                if (currentMode === 'encrypt') {
+                    plaintextInput.focus();
+                } else {
+                    ciphertextInput.focus();
+                }
+            }
+
+            function handleSwap() {
+                if (currentMode === 'encrypt') {
+                    // 加密模式：把输出密文交换到解密模式的输入
+                    const outputText = outputArea.value.trim();
+                    if (!outputText) {
+                        showStatus('info', 'ℹ️ 没有输出内容可交换，请先执行加密');
+                        return;
+                    }
+                    setMode('decrypt');
+                    ciphertextInput.value = outputText;
+                    outputArea.value = '';
+                    hideSaltInfo();
+                    showStatus('info', 'ℹ️ 已切换到解密模式，密文已填入。请输入密码进行解密验证');
+                } else {
+                    // 解密模式：把输出明文交换到加密模式的输入
+                    const outputText = outputArea.value;
+                    if (!outputText) {
+                        showStatus('info', 'ℹ️ 没有输出内容可交换，请先执行解密');
+                        return;
+                    }
+                    setMode('encrypt');
+                    plaintextInput.value = outputText;
+                    outputArea.value = '';
+                    hideSaltInfo();
+                    showStatus('info', 'ℹ️ 已切换到加密模式，明文已填入');
+                }
+            }
+
+            function togglePasswordVisibility() {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                togglePwdBtn.textContent = isPassword ? '🙈' : '👁️';
+            }
+
+            // ==================== 事件绑定 ====================
+            modeTabs.addEventListener('click', function(e) {
+                const tab = e.target.closest('.mode-tab');
+                if (!tab) return;
+                const mode = tab.dataset.mode;
+                if (mode && mode !== currentMode) {
+                    setMode(mode);
+                }
+            });
+
+            btnAction.addEventListener('click', handleAction);
+            btnCopy.addEventListener('click', handleCopy);
+            btnClear.addEventListener('click', handleClear);
+            btnSwap.addEventListener('click', handleSwap);
+            togglePwdBtn.addEventListener('click', togglePasswordVisibility);
+
+            // 键盘快捷键: Ctrl+Enter 执行操作
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAction();
+                }
+            });
+
+            // 检测浏览器是否支持所选算法
+            async function checkAlgorithmSupport(algoName) {
+                const params = getAlgorithmParams(algoName);
+                if (!params) return false;
+                try {
+                    const testKey = await crypto.subtle.generateKey({
+                            name: params.webCryptoName,
+                            length: params.keyLen * 8
+                        },
+                        false,
+                        ['encrypt', 'decrypt']
+                    );
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            async function updateAlgorithmOptions() {
+                const options = algorithmSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    const supported = await checkAlgorithmSupport(options[i].value);
+                    if (!supported) {
+                        options[i].disabled = true;
+                        options[i].text += ' (浏览器不支持)';
+                        if (options[i].selected) {
+                            // 选择第一个支持的算法
+                            for (let j = 0; j < options.length; j++) {
+                                if (!options[j].disabled) {
+                                    algorithmSelect.value = options[j].value;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==================== 初始化 ====================
+            function init() {
+                setMode('encrypt');
+                hideStatus();
+                hideSaltInfo();
+                outputArea.value = '';
+                plaintextInput.value = '';
+                ciphertextInput.value = '';
+                passwordInput.value = '';
+                updateAlgorithmOptions().catch(() => {
+                    // 静默处理，不影响使用
+                });
+                // 聚焦到明文输入
+                plaintextInput.focus();
+            }
+
+            init();
+
+            // ==================== 暴露调试接口 ====================
+            console.log('🔐 OpenSSL 加解密工具已就绪');
+            console.log('  支持算法: AES-256/192/128-CBC, AES-256/128-GCM, 3DES-CBC, DES-CBC');
+            console.log('  KDF: MD5 (传统OpenSSL), SHA-256 (OpenSSL 1.1.0+)');
+            console.log('  快捷键: Ctrl+Enter 执行加解密');
+            console.log('  输出格式: OpenSSL Salted__ 兼容格式 (Base64)');
+        })();
+    </script>
+</body>
+</html>
