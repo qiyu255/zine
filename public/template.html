@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-hans" class="theme-dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>示例页面</title>
+  <script>
+    // 持久化用户选择的主题
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.classList.add(savedTheme);
+    }
+
+    // 监听系统主题变化
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      document.documentElement.classList.toggle('theme-dark', e.matches);
+      document.documentElement.classList.toggle('theme-light', !e.matches);
+    });
+
+    // 初始化主题
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('theme-dark');
+    } else {
+      document.documentElement.classList.add('theme-light');
+    }
+  </script>
+  <style>
+    :root {
+      --font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        "Noto Sans",
+        "Liberation Sans",
+        sans-serif,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji",
+        "Source Han Sans VF",
+        "Microsoft YaHei",
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "WenQuanYi Micro Hei",
+        sans-serif;
+
+      --font-family-monospace:
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        "Courier New",
+        "JetBrains Mono",
+        monospace,
+        "Source Han Sans VF",
+        "Microsoft YaHei",
+        "PingFang SC",
+        "Hiragino Sans GB";
+    }
+
+
+    .theme-dark {
+      color-scheme: dark;
+      --bg_h: #1d2021;
+      --bg: #282828;
+      --bg_s: #32302f;
+      --bg1: #3c3836;
+      --bg2: #504945;
+      --bg3: #665c54;
+      --bg4: #7c6f64;
+      --fg: #fbf1c7;
+      --fg1: #ebdbb2;
+      --fg2: #d5c4a1;
+      --fg3: #bdae93;
+      --fg4: #a89984;
+      --red: #fb4934;
+      --green: #b8bb26;
+      --yellow: #fabd2f;
+      --blue: #83a598;
+      --purple: #d3869b;
+      --aqua: #8ec07c;
+      --gray: #928374;
+      --orange: #fe8019;
+      --red-dim: #cc2412;
+      --green-dim: #98971a;
+      --yellow-dim: #d79921;
+      --blue-dim: #458588;
+      --purple-dim: #b16286;
+      --aqua-dim: #689d6a;
+      --gray-dim: #a89984;
+      --orange-dim: #d65d0e;
+    }
+
+    .theme-light {
+      color-scheme: light;
+      --bg_h: #f9f5d7;
+      --bg: #fbf1c7;
+      --bg_s: #f2e5bc;
+      --bg1: #ebdbb2;
+      --bg2: #d5c4a1;
+      --bg3: #bdae93;
+      --bg4: #a89984;
+      --fg: #282828;
+      --fg1: #3c3836;
+      --fg2: #504945;
+      --fg3: #665c54;
+      --fg4: #7c6f64;
+      --red: #9d0006;
+      --green: #79740e;
+      --yellow: #b57614;
+      --blue: #076678;
+      --purple: #8f3f71;
+      --aqua: #427b58;
+      --orange: #af3a03;
+      --gray: #928374;
+      --red-dim: #cc2412;
+      --green-dim: #98971a;
+      --yellow-dim: #d79921;
+      --blue-dim: #458598;
+      --purple-dim: #b16286;
+      --aqua-dim: #689d6a;
+      --orange-dim: #d65d0e;
+      --gray-dim: #7c6f64;
+    }
+  </style>
+</head>
+
+<body>
+
+</body>
+
+</html>

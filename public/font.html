@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字体排版测试 — 中英文混合预览</title>
+    <style>
+        :root {
+            --bg_h: #1d2021;
+            --bg: #282828;
+            --bg_s: #32302f;
+            --bg1: #3c3836;
+            --bg2: #504945;
+            --bg3: #665c54;
+            --bg4: #7c6f64;
+            --fg: #fbf1c7;
+            --fg1: #ebdbb2;
+            --fg2: #d5c4a1;
+            --fg3: #bdae93;
+            --fg4: #a89984;
+            --red: #fb4934;
+            --green: #b8bb26;
+            --yellow: #fabd2f;
+            --blue: #83a598;
+            --purple: #d3869b;
+            --aqua: #8ec07c;
+            --gray: #928374;
+            --orange: #fe8019;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458588;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --gray-dim: #a89984;
+            --orange-dim: #d65d0e;
+            --card-radius: 12px;
+            --btn-radius: 8px;
+            --transition-fast: 0.15s ease;
+            --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-size: 16px;
+        }
+
+        body {
+            background-color: var(--bg_h);
+            color: var(--fg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            letter-spacing: 0.01em;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bg4);
+        }
+        ::-webkit-scrollbar-corner {
+            background: var(--bg);
+        }
+
+        /* ---- 主容器 ---- */
+        .app-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: clamp(16px, 3vw, 32px);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 32px);
+        }
+
+        /* ---- Header ---- */
+        .header {
+            text-align: center;
+            padding: clamp(20px, 4vw, 40px) 16px clamp(12px, 2vw, 20px);
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(60px, 10vw, 100px);
+            height: 3px;
+            background: var(--yellow);
+            border-radius: 2px;
+            opacity: 0.7;
+        }
+        .header__title {
+            font-size: clamp(1.5rem, 4vw, 2.4rem);
+            font-weight: 700;
+            color: var(--fg);
+            letter-spacing: 0.03em;
+            margin-bottom: 6px;
+        }
+        .header__title .accent {
+            color: var(--yellow);
+        }
+        .header__subtitle {
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            color: var(--fg3);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+        }
+
+        /* ---- 控制面板 ---- */
+        .control-panel {
+            background: var(--bg);
+            border: 1px solid var(--bg2);
+            border-radius: var(--card-radius);
+            padding: clamp(16px, 2.5vw, 24px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 20px;
+            align-items: flex-end;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 12px;
+            z-index: 50;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 140px;
+            flex: 1 1 auto;
+        }
+        .control-group--text {
+            flex: 3 1 280px;
+            min-width: 220px;
+        }
+        .control-group--size {
+            flex: 0 1 140px;
+            min-width: 100px;
+        }
+        .control-group--toggle {
+            flex: 0 1 auto;
+            min-width: auto;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--fg3);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+        .control-input {
+            background: var(--bg_s);
+            border: 1px solid var(--bg2);
+            border-radius: var(--btn-radius);
+            padding: 10px 14px;
+            font-size: 0.92rem;
+            color: var(--fg1);
+            font-family: inherit;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+            outline: none;
+            width: 100%;
+        }
+        .control-input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.15);
+        }
+        .control-input::placeholder {
+            color: var(--fg4);
+        }
+        .control-range {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--bg2);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        .control-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--blue);
+            border: 2px solid var(--bg);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .control-range::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: var(--shadow-md);
+        }
+        .control-range::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--blue);
+            border: 2px solid var(--bg);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+        .size-display {
+            font-size: 0.8rem;
+            color: var(--blue);
+            font-weight: 700;
+            text-align: center;
+            min-width: 36px;
+            font-variant-numeric: tabular-nums;
+            font-family: "SF Mono", "Cascadia Code", "Consolas", "Courier New", monospace;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg3);
+            border-radius: 26px;
+            transition: background var(--transition-smooth);
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--fg2);
+            border-radius: 50%;
+            transition: transform var(--transition-smooth), background var(--transition-smooth);
+        }
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--blue-dim);
+        }
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(20px);
+            background: var(--blue);
+        }
+
+        /* ---- 分类筛选 ---- */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .filter-bar__label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--fg4);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+        .filter-btn {
+            padding: 7px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--bg2);
+            background: var(--bg_s);
+            color: var(--fg3);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-smooth);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .filter-btn:hover {
+            border-color: var(--bg4);
+            color: var(--fg1);
+            background: var(--bg1);
+        }
+        .filter-btn--active {
+            border-color: var(--yellow);
+            color: var(--yellow);
+            background: rgba(250, 189, 47, 0.08);
+            font-weight: 600;
+            box-shadow: 0 0 0 2px rgba(250, 189, 47, 0.1);
+        }
+        .filter-btn .count {
+            font-size: 0.7rem;
+            margin-left: 3px;
+            opacity: 0.7;
+        }
+
+        /* ---- 字体卡片网格 ---- */
+        .font-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: clamp(14px, 2vw, 20px);
+        }
+        @media (min-width: 1400px) {
+            .font-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        @media (max-width: 700px) {
+            .font-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        /* ---- 单个字体卡片 ---- */
+        .font-card {
+            background: var(--bg_s);
+            border: 1px solid var(--bg2);
+            border-radius: var(--card-radius);
+            padding: clamp(16px, 2.5vw, 22px);
+            transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), transform var(--transition-smooth);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+        .font-card:hover {
+            border-color: var(--bg4);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .font-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
+            opacity: 0;
+            transition: opacity var(--transition-smooth);
+            pointer-events: none;
+        }
+        .font-card--web-safe::before {
+            background: var(--blue);
+        }
+        .font-card--system-ui::before {
+            background: var(--green);
+        }
+        .font-card--chinese::before {
+            background: var(--purple);
+        }
+        .font-card--mono::before {
+            background: var(--aqua);
+        }
+        .font-card:hover::before {
+            opacity: 1;
+        }
+
+        .font-card__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .font-card__name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--fg1);
+            letter-spacing: 0.02em;
+            word-break: break-word;
+        }
+        .font-card__badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 14px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        .badge--web-safe {
+            background: rgba(131, 165, 152, 0.15);
+            color: var(--blue);
+            border: 1px solid rgba(131, 165, 152, 0.3);
+        }
+        .badge--system-ui {
+            background: rgba(184, 187, 38, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(184, 187, 38, 0.3);
+        }
+        .badge--chinese {
+            background: rgba(211, 134, 155, 0.13);
+            color: var(--purple);
+            border: 1px solid rgba(211, 134, 155, 0.3);
+        }
+        .badge--mono {
+            background: rgba(142, 192, 124, 0.12);
+            color: var(--aqua);
+            border: 1px solid rgba(142, 192, 124, 0.3);
+        }
+
+        .font-card__specimen {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .specimen-row {
+            font-size: var(--specimen-font-size, 18px);
+            line-height: 1.55;
+            color: var(--fg);
+            word-break: break-word;
+            transition: font-size 0.2s ease;
+        }
+        .specimen-row--regular {
+            font-weight: 400;
+            color: var(--fg1);
+        }
+        .specimen-row--bold {
+            font-weight: 700;
+            color: var(--fg);
+        }
+        .specimen-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--fg4);
+            margin-bottom: -4px;
+            user-select: none;
+        }
+
+        /* 隐藏bold行 */
+        .font-card--hide-bold .specimen-row--bold {
+            display: none;
+        }
+        .font-card--hide-bold .specimen-label--bold {
+            display: none;
+        }
+
+        /* ---- Footer ---- */
+        .footer {
+            text-align: center;
+            padding: 24px 16px 20px;
+            color: var(--fg4);
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
+            border-top: 1px solid var(--bg2);
+            margin-top: 8px;
+        }
+        .footer span {
+            color: var(--fg3);
+        }
+
+        /* ---- 空状态 ---- */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--fg4);
+            font-size: 1rem;
+        }
+        .empty-state__icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        /* ---- 响应式微调 ---- */
+        @media (max-width: 700px) {
+            .control-panel {
+                flex-direction: column;
+                gap: 12px;
+                position: static;
+                top: auto;
+            }
+            .control-group--text {
+                flex: 1 1 auto;
+                min-width: 100%;
+            }
+            .control-group--size {
+                flex: 1 1 auto;
+            }
+            .control-group--toggle {
+                align-self: flex-start;
+            }
+            .filter-bar {
+                gap: 6px;
+            }
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 0.72rem;
+                border-radius: 16px;
+            }
+            .font-card__name {
+                font-size: 0.85rem;
+            }
+            .specimen-row {
+                --specimen-font-size: 16px;
+            }
+            .header__title {
+                font-size: 1.35rem;
+            }
+        }
+        @media (max-width: 400px) {
+            .font-card {
+                padding: 14px;
+                gap: 10px;
+            }
+            .filter-btn {
+                padding: 5px 10px;
+                font-size: 0.68rem;
+                border-radius: 14px;
+            }
+            .specimen-row {
+                --specimen-font-size: 14px;
+            }
+            .font-card__badge {
+                font-size: 0.6rem;
+                padding: 3px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- ==================== Header ==================== -->
+        <header class="header">
+            <h1 class="header__title">字体<span class="accent">排版</span>测试</h1>
+            <p class="header__subtitle">Web 安全字体 &amp; 系统字体 · 中英文混合预览</p>
+        </header>
+
+        <!-- ==================== 控制面板 ==================== -->
+        <div class="control-panel" id="controlPanel">
+            <!-- 文本输入 -->
+            <div class="control-group control-group--text">
+                <label class="control-label" for="specimenText">📝 测试文本</label>
+                <input
+                class="control-input"
+                type="text"
+                id="specimenText"
+                value="The quick brown fox jumps over the lazy dog. 敏捷的棕色狐狸跳过了懒狗。1234567890"
+                placeholder="输入中英文混合测试文本..."
+                autocomplete="off"
+                >
+            </div>
+            <!-- 字号调节 -->
+            <div class="control-group control-group--size">
+                <label class="control-label" for="fontSizeSlider">
+                    🔤 字号 <span class="size-display" id="sizeDisplay">18px</span>
+                </label>
+                <input
+                class="control-range"
+                type="range"
+                id="fontSizeSlider"
+                min="10"
+                max="48"
+                value="18"
+                step="1"
+                >
+            </div>
+            <!-- Bold开关 -->
+            <div class="control-group control-group--toggle">
+                <span class="control-label">💪 粗体对比</span>
+                <label class="toggle-switch" for="boldToggle" title="显示/隐藏 Bold 字重对比行">
+                    <input type="checkbox" id="boldToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ==================== 分类筛选栏 ==================== -->
+        <div class="filter-bar" id="filterBar">
+            <span class="filter-bar__label">筛选：</span>
+            <button class="filter-btn filter-btn--active" data-filter="all">全部<span class="count" id="countAll"></span></button>
+            <button class="filter-btn" data-filter="web-safe">Web 安全<span class="count" id="countWebSafe"></span></button>
+            <button class="filter-btn" data-filter="system-ui">系统 UI<span class="count" id="countSystemUI"></span></button>
+            <button class="filter-btn" data-filter="chinese">中文字体<span class="count" id="countChinese"></span></button>
+            <button class="filter-btn" data-filter="mono">等宽字体<span class="count" id="countMono"></span></button>
+        </div>
+
+        <!-- ==================== 字体卡片网格 ==================== -->
+        <div class="font-grid" id="fontGrid">
+            <!-- JS动态生成 -->
+        </div>
+
+        <!-- ==================== Footer ==================== -->
+        <footer class="footer">
+            <span>字体排版测试工具</span> · 实际渲染效果取决于您的操作系统与浏览器 · 部分字体在特定系统中可能不可用
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            // ============ 字体数据定义 ============
+            const fontData = [
+                // ---- Web 安全字体 ----
+                {
+                    name: 'Arial',
+                    family: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+                    category: 'web-safe',
+                    description: '最通用的无衬线字体之一'
+                }, {
+                    name: 'Helvetica',
+                    family: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                    category: 'web-safe',
+                    description: '经典瑞士无衬线字体'
+                }, {
+                    name: 'Times New Roman',
+                    family: '"Times New Roman", Times, Georgia, serif',
+                    category: 'web-safe',
+                    description: '经典衬线字体，印刷风格'
+                }, {
+                    name: 'Georgia',
+                    family: 'Georgia, "Times New Roman", Times, serif',
+                    category: 'web-safe',
+                    description: '优雅的屏幕衬线字体'
+                }, {
+                    name: 'Verdana',
+                    family: 'Verdana, Geneva, Tahoma, sans-serif',
+                    category: 'web-safe',
+                    description: '宽大字腔，屏幕可读性优秀'
+                }, {
+                    name: 'Tahoma',
+                    family: 'Tahoma, Verdana, Geneva, sans-serif',
+                    category: 'web-safe',
+                    description: '紧凑的无衬线字体'
+                }, {
+                    name: 'Trebuchet MS',
+                    family: '"Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif',
+                    category: 'web-safe',
+                    description: '独特人文主义无衬线字体'
+                }, {
+                    name: 'Palatino Linotype',
+                    family: '"Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif',
+                    category: 'web-safe',
+                    description: '文艺复兴风格的衬线字体'
+                }, {
+                    name: 'Garamond',
+                    family: 'Garamond, "Palatino Linotype", "Book Antiqua", Georgia, serif',
+                    category: 'web-safe',
+                    description: '优雅古典衬线字体'
+                }, {
+                    name: 'Impact',
+                    family: 'Impact, "Arial Black", "Franklin Gothic Heavy", sans-serif',
+                    category: 'web-safe',
+                    description: '粗壮醒目的展示字体'
+                }, {
+                    name: 'Comic Sans MS',
+                    family: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", cursive',
+                    category: 'web-safe',
+                    description: '轻松手写风格字体'
+                },
+
+                // ---- 系统 UI 字体 ----
+                {
+                    name: 'System UI',
+                    family: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif',
+                    category: 'system-ui',
+                    description: '操作系统原生界面字体'
+                }, {
+                    name: 'Segoe UI',
+                    family: '"Segoe UI", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
+                    category: 'system-ui',
+                    description: 'Windows 系统界面字体'
+                }, {
+                    name: 'Roboto',
+                    family: 'Roboto, system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+                    category: 'system-ui',
+                    description: 'Android / Google 设计字体'
+                }, {
+                    name: 'San Francisco',
+                    family: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", sans-serif',
+                    category: 'system-ui',
+                    description: 'Apple 生态系统界面字体'
+                },
+
+                // ---- 中文字体 ----
+                {
+                    name: '微软雅黑',
+                    family: '"Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "STHeiti", "Noto Sans SC", sans-serif',
+                    category: 'chinese',
+                    description: 'Windows 默认中文字体'
+                }, {
+                    name: '苹方',
+                    family: '"PingFang SC", "PingFang TC", "Microsoft YaHei", "Hiragino Sans GB", "STHeiti", sans-serif',
+                    category: 'chinese',
+                    description: 'macOS / iOS 默认中文字体'
+                }, {
+                    name: '宋体',
+                    family: '"SimSun", "STSong", "Songti SC", "Noto Serif SC", "KaiTi", serif',
+                    category: 'chinese',
+                    description: '传统中文衬线字体'
+                }, {
+                    name: '黑体',
+                    family: '"SimHei", "PingFang SC", "Microsoft YaHei", "STHeiti", "Noto Sans SC", sans-serif',
+                    category: 'chinese',
+                    description: '中文无衬线字体'
+                }, {
+                    name: '楷体',
+                    family: '"KaiTi", "STKaiti", "Kaiti SC", "BiauKai", "Noto Serif SC", serif',
+                    category: 'chinese',
+                    description: '中文楷书风格字体'
+                }, {
+                    name: '仿宋',
+                    family: '"FangSong", "STFangsong", "FangSong_GB2312", "Noto Serif SC", serif',
+                    category: 'chinese',
+                    description: '中文仿宋风格字体'
+                }, {
+                    name: '思源黑体',
+                    family: '"Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif',
+                    category: 'chinese',
+                    description: 'Adobe / Google 开源黑体'
+                }, {
+                    name: '华文黑体',
+                    family: '"STHeiti", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif',
+                    category: 'chinese',
+                    description: 'macOS 传统中文黑体'
+                },
+
+                // ---- 等宽字体 ----
+                {
+                    name: 'Courier New',
+                    family: '"Courier New", Courier, "Liberation Mono", "Source Code Pro", monospace',
+                    category: 'mono',
+                    description: '经典等宽字体'
+                }, {
+                    name: 'Consolas',
+                    family: 'Consolas, "Courier New", "SF Mono", "Cascadia Code", "Source Code Pro", monospace',
+                    category: 'mono',
+                    description: 'Windows 编程等宽字体'
+                }, {
+                    name: 'SF Mono',
+                    family: '"SF Mono", "Menlo", "Consolas", "Cascadia Code", "Courier New", monospace',
+                    category: 'mono',
+                    description: 'Apple 等宽字体'
+                },
+            ];
+
+            // ============ DOM引用 ============
+            const fontGrid = document.getElementById('fontGrid');
+            const specimenTextInput = document.getElementById('specimenText');
+            const fontSizeSlider = document.getElementById('fontSizeSlider');
+            const sizeDisplay = document.getElementById('sizeDisplay');
+            const boldToggle = document.getElementById('boldToggle');
+            const filterBar = document.getElementById('filterBar');
+            const filterBtns = filterBar.querySelectorAll('.filter-btn');
+
+            // ============ 状态 ============
+            let currentFilter = 'all';
+            let currentFontSize = 18;
+            let showBold = true;
+            let currentText = specimenTextInput.value;
+
+            // ============ 更新计数标签 ============
+            function updateCounts() {
+                const counts = {
+                    all: fontData.length,
+                    'web-safe': fontData.filter(f => f.category === 'web-safe').length,
+                    'system-ui': fontData.filter(f => f.category === 'system-ui').length,
+                    chinese: fontData.filter(f => f.category === 'chinese').length,
+                    mono: fontData.filter(f => f.category === 'mono').length,
+                };
+                document.getElementById('countAll').textContent = `(${counts.all})`;
+                document.getElementById('countWebSafe').textContent = `(${counts['web-safe']})`;
+                document.getElementById('countSystemUI').textContent = `(${counts['system-ui']})`;
+                document.getElementById('countChinese').textContent = `(${counts.chinese})`;
+                document.getElementById('countMono').textContent = `(${counts.mono})`;
+            }
+
+            // ============ 渲染字体卡片 ============
+            function renderCards() {
+                const filtered = currentFilter === 'all' ?
+                    fontData :
+                    fontData.filter(f => f.category === currentFilter);
+
+                if (filtered.length === 0) {
+                    fontGrid.innerHTML = `
+                        <div class="empty-state">
+                            <span class="empty-state__icon">🔍</span>
+                            <p>没有匹配的字体</p>
+                        </div>`;
+                    return;
+                }
+
+                fontGrid.innerHTML = filtered.map((font, index) => {
+                    const categoryClassMap = {
+                        'web-safe': 'font-card--web-safe',
+                        'system-ui': 'font-card--system-ui',
+                        'chinese': 'font-card--chinese',
+                        'mono': 'font-card--mono',
+                    };
+                    const badgeClassMap = {
+                        'web-safe': 'badge--web-safe',
+                        'system-ui': 'badge--system-ui',
+                        'chinese': 'badge--chinese',
+                        'mono': 'badge--mono',
+                    };
+                    const badgeLabelMap = {
+                        'web-safe': 'Web 安全',
+                        'system-ui': '系统 UI',
+                        'chinese': '中文字体',
+                        'mono': '等宽',
+                    };
+                    const cardClass = categoryClassMap[font.category] || '';
+                    const badgeClass = badgeClassMap[font.category] || '';
+                    const badgeLabel = badgeLabelMap[font.category] || font.category;
+                    const hideBoldClass = showBold ? '' : 'font-card--hide-bold';
+
+                    return `
+                        <div class="font-card ${cardClass} ${hideBoldClass}"
+                             style="font-family: ${font.family.replace(/"/g, '&quot;')};"
+                             data-font-family="${font.family.replace(/"/g, '&quot;')}"
+                             data-category="${font.category}">
+                            <div class="font-card__header">
+                                <span class="font-card__name">${escapeHTML(font.name)}</span>
+                                <span class="font-card__badge ${badgeClass}">${badgeLabel}</span>
+                            </div>
+                            <div class="font-card__specimen">
+                                <span class="specimen-label specimen-label--regular">Regular 400</span>
+                                <span class="specimen-row specimen-row--regular"
+                                style="font-size: ${currentFontSize}px;">${escapeHTML(currentText)}</span>
+                                <span class="specimen-label specimen-label--bold">Bold 700</span>
+                                <span class="specimen-row specimen-row--bold"
+                                style="font-size: ${currentFontSize}px;">${escapeHTML(currentText)}</span>
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ============ 更新所有卡片（无需重建DOM） ============
+            function updateAllCardText() {
+                const cards = fontGrid.querySelectorAll('.font-card');
+                cards.forEach(card => {
+                    const regularRow = card.querySelector('.specimen-row--regular');
+                    const boldRow = card.querySelector('.specimen-row--bold');
+                    if (regularRow) {
+                        regularRow.textContent = currentText;
+                        regularRow.style.fontSize = currentFontSize + 'px';
+                    }
+                    if (boldRow) {
+                        boldRow.textContent = currentText;
+                        boldRow.style.fontSize = currentFontSize + 'px';
+                    }
+                });
+            }
+
+            function updateAllCardFontSize() {
+                const cards = fontGrid.querySelectorAll('.font-card');
+                cards.forEach(card => {
+                    const rows = card.querySelectorAll('.specimen-row');
+                    rows.forEach(row => {
+                        row.style.fontSize = currentFontSize + 'px';
+                    });
+                });
+                sizeDisplay.textContent = currentFontSize + 'px';
+            }
+
+            function updateAllCardBoldVisibility() {
+                const cards = fontGrid.querySelectorAll('.font-card');
+                cards.forEach(card => {
+                    if (showBold) {
+                        card.classList.remove('font-card--hide-bold');
+                    } else {
+                        card.classList.add('font-card--hide-bold');
+                    }
+                });
+            }
+
+            // ============ 事件处理 ============
+            specimenTextInput.addEventListener('input', function() {
+                currentText = this.value || this.placeholder;
+                updateAllCardText();
+            });
+
+            fontSizeSlider.addEventListener('input', function() {
+                currentFontSize = parseInt(this.value, 10);
+                updateAllCardFontSize();
+            });
+
+            boldToggle.addEventListener('change', function() {
+                showBold = this.checked;
+                updateAllCardBoldVisibility();
+            });
+
+            // 分类筛选
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    if (filter === currentFilter) return;
+                    currentFilter = filter;
+                    // 更新按钮状态
+                    filterBtns.forEach(b => b.classList.remove('filter-btn--active'));
+                    this.classList.add('filter-btn--active');
+                    // 重建卡片
+                    renderCards();
+                    // 重新应用字号（因为卡片重建了）
+                    updateAllCardFontSize();
+                    if (!showBold) updateAllCardBoldVisibility();
+                });
+            });
+
+            // 键盘快捷键：上下箭头调整字号
+            document.addEventListener('keydown', function(e) {
+                // 如果焦点在输入框中，不拦截
+                if (document.activeElement === specimenTextInput) return;
+                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    currentFontSize = Math.min(48, currentFontSize + 1);
+                    fontSizeSlider.value = currentFontSize;
+                    updateAllCardFontSize();
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    currentFontSize = Math.max(10, currentFontSize - 1);
+                    fontSizeSlider.value = currentFontSize;
+                    updateAllCardFontSize();
+                } else if (e.key === 'b' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    e.preventDefault();
+                    showBold = !showBold;
+                    boldToggle.checked = showBold;
+                    updateAllCardBoldVisibility();
+                }
+            });
+
+            // 点击卡片复制font-family
+            fontGrid.addEventListener('click', function(e) {
+                const card = e.target.closest('.font-card');
+                if (!card) return;
+                const fontFamily = card.getAttribute('data-font-family');
+                if (!fontFamily) return;
+                const decoded = fontFamily.replace(/&quot;/g, '"');
+                navigator.clipboard.writeText(decoded).then(() => {
+                    showToast('已复制：' + decoded);
+                }).catch(() => {
+                    // fallback：选中文本
+                    const tempInput = document.createElement('input');
+                    tempInput.value = decoded;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    showToast('已复制 font-family');
+                });
+            });
+
+            // Toast提示
+            let toastTimer;
+            function showToast(message) {
+                let toast = document.getElementById('toast');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'toast';
+                    toast.style.cssText = `
+                            position: fixed;
+                            bottom: 24px;
+                            left: 50%;
+                            transform: translateX(-50%) translateY(80px);
+                            background: var(--bg1);
+                            color: var(--fg1);
+                            border: 1px solid var(--bg3);
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            font-size: 0.85rem;
+                            font-family: inherit;
+                            z-index: 999;
+                            pointer-events: none;
+                            opacity: 0;
+                            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+                            box-shadow: var(--shadow-lg);
+                            letter-spacing: 0.02em;
+                            max-width: 90vw;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        `;
+                    document.body.appendChild(toast);
+                }
+                clearTimeout(toastTimer);
+                toast.textContent = message;
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+                toast.style.opacity = '1';
+                toastTimer = setTimeout(() => {
+                    toast.style.transform = 'translateX(-50%) translateY(80px)';
+                    toast.style.opacity = '0';
+                }, 1800);
+            }
+
+            // ============ 初始化 ============
+            function init() {
+                updateCounts();
+                renderCards();
+                fontSizeSlider.value = currentFontSize;
+                sizeDisplay.textContent = currentFontSize + 'px';
+                boldToggle.checked = showBold;
+                // 确保初始状态正确
+                updateAllCardFontSize();
+                updateAllCardBoldVisibility();
+            }
+
+            init();
+
+            // ============ 响应式：移动端调整默认字号 ============
+            function handleResize() {
+                const width = window.innerWidth;
+                if (width <= 400 && currentFontSize > 24) {
+                    // 小屏幕自动缩减字号
+                }
+            }
+            window.addEventListener('resize', handleResize);
+
+            console.log('🎨 字体排版测试工具已就绪');
+            console.log('   💡 提示：点击字体卡片可复制其 font-family');
+            console.log('   ⌨️  快捷键：↑↓ 调整字号 | B 切换粗体对比');
+            console.log('   📱 已适配移动设备和PC端');
+        })();
+    </script>
+</body>
+</html>
