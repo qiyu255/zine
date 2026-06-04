@@ -1,31 +1,115 @@
 <!DOCTYPE html>
-<html lang="zh-hans" class="theme-dark">
+<html lang="zh-hans">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>示例页面</title>
+  <meta name="theme-color" content="#282828" id="theme-color-meta">
+  <title>html 模板</title>
   <script>
-    // 持久化用户选择的主题
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      document.documentElement.classList.add(savedTheme);
-    }
+    (function() {
+      // 主题管理器 — 自执行函数避免污染全局命名空间
+      const STORAGE_KEY = 'theme-preference';
+      const DARK_MEDIA = window.matchMedia('(prefers-color-scheme: dark)');
 
-    // 监听系统主题变化
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      document.documentElement.classList.toggle('theme-dark', e.matches);
-      document.documentElement.classList.toggle('theme-light', !e.matches);
-    });
+      function getSavedTheme() {
+        try {
+          return localStorage.getItem(STORAGE_KEY);
+        } catch (e) {
+          return null;
+        }
+      }
 
-    // 初始化主题
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('theme-dark');
-    } else {
-      document.documentElement.classList.add('theme-light');
-    }
+      function saveTheme(theme) {
+        try {
+          if (theme) {
+            localStorage.setItem(STORAGE_KEY, theme);
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        } catch (e) {
+          console.warn('无法保存主题偏好:', e);
+        }
+      }
+
+      function applyTheme(theme) {
+        const root = document.documentElement;
+        root.classList.remove('theme-dark', 'theme-light');
+        root.classList.add(theme);
+
+        // 同步更新 theme-color meta 标签（移动端浏览器顶部颜色）
+        const metaTheme = document.getElementById('theme-color-meta');
+        if (metaTheme) {
+          metaTheme.content = theme === 'theme-dark' ? '#282828' : '#fbf1c7';
+        }
+      }
+
+      function getSystemTheme() {
+        return DARK_MEDIA.matches ? 'theme-dark' : 'theme-light';
+      }
+
+      // ========== 初始化逻辑 ==========
+      const savedTheme = getSavedTheme();
+
+      if (savedTheme) {
+        // 用户有手动保存的主题 — 优先使用
+        applyTheme(savedTheme);
+      } else {
+        // 无手动设置，跟随系统
+        applyTheme(getSystemTheme());
+      }
+
+      // ========== 监听系统主题变化 ==========
+      // 仅当用户未手动设置时，自动跟随系统变化
+      DARK_MEDIA.addEventListener('change', function(e) {
+        if (!getSavedTheme()) {
+          applyTheme(e.matches ? 'theme-dark' : 'theme-light');
+        }
+      });
+
+      // ========== 暴露给全局的切换函数 ==========
+      window.ThemeManager = {
+        // 手动设置主题
+        set: function(theme) {
+          if (theme !== 'theme-dark' && theme !== 'theme-light') {
+            console.error('无效的主题:', theme);
+            return;
+          }
+          saveTheme(theme);
+          applyTheme(theme);
+        },
+
+        // 跟随系统（清除手动设置）
+        followSystem: function() {
+          saveTheme(null);
+          applyTheme(getSystemTheme());
+        },
+
+        // 切换当前主题
+        toggle: function() {
+          const current = document.documentElement.classList.contains('theme-dark')
+            ? 'theme-dark' : 'theme-light';
+          const next = current === 'theme-dark' ? 'theme-light' : 'theme-dark';
+          this.set(next);
+        },
+
+        // 获取当前主题状态
+        getCurrent: function() {
+          const root = document.documentElement;
+          if (root.classList.contains('theme-dark')) return 'theme-dark';
+          if (root.classList.contains('theme-light')) return 'theme-light';
+          return getSystemTheme();
+        },
+
+        // 检查是否是手动设置
+        isManual: function() {
+          return !!getSavedTheme();
+        }
+      };
+    })();
   </script>
   <style>
+    /* ========== 基础变量与字体 ========== */
     :root {
       --font-family:
         -apple-system,
@@ -41,9 +125,8 @@
         "Segoe UI Emoji",
         "Segoe UI Symbol",
         "Noto Color Emoji",
-        "Source Han Sans VF",
-        "Microsoft YaHei",
         "PingFang SC",
+        "Microsoft YaHei",
         "Hiragino Sans GB",
         "WenQuanYi Micro Hei",
         sans-serif;
@@ -56,14 +139,18 @@
         "Liberation Mono",
         "Courier New",
         "JetBrains Mono",
-        monospace,
-        "Source Han Sans VF",
-        "Microsoft YaHei",
-        "PingFang SC",
-        "Hiragino Sans GB";
+        monospace;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --transition-base: 0.2s ease;
     }
 
-
+    /* ========== 深色主题 (Gruvbox Dark) ========== */
     .theme-dark {
       color-scheme: dark;
       --bg_h: #1d2021;
@@ -96,6 +183,7 @@
       --orange-dim: #d65d0e;
     }
 
+    /* ========== 浅色主题 (Gruvbox Light) ========== */
     .theme-light {
       color-scheme: light;
       --bg_h: #f9f5d7;
@@ -127,11 +215,468 @@
       --orange-dim: #d65d0e;
       --gray-dim: #7c6f64;
     }
+
+    /* ========== 基础样式重置 ========== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-family: var(--font-family);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      transition: background-color var(--transition-base), color var(--transition-base);
+    }
+
+    /* ========== 页面布局 ========== */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ========== 主题切换控件 ========== */
+    .theme-controls {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      background: var(--bg_s);
+      padding: 0.5rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--bg2);
+      z-index: 100;
+    }
+
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--fg3);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all var(--transition-base);
+    }
+
+    .theme-btn:hover {
+      background: var(--bg2);
+      color: var(--fg);
+    }
+
+    .theme-btn.active {
+      background: var(--bg3);
+      color: var(--fg);
+    }
+
+    .theme-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--bg3);
+    }
+
+    /* ========== 内容区域 ========== */
+    .page-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--bg2);
+    }
+
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 1rem;
+      color: var(--fg3);
+    }
+
+    .card {
+      background: var(--bg_s);
+      border: 1px solid var(--bg2);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: background-color var(--transition-base), border-color var(--transition-base);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--fg1);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-body {
+      color: var(--fg2);
+      line-height: 1.7;
+    }
+
+    .card-body p {
+      margin-bottom: 1rem;
+    }
+
+    .card-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ========== 颜色展示 ========== */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .color-swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.75rem;
+      border-radius: var(--radius-md);
+      background: var(--bg1);
+      border: 1px solid var(--bg2);
+    }
+
+    .color-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+      border: 2px solid var(--bg3);
+    }
+
+    .color-label {
+      font-size: 0.75rem;
+      font-family: var(--font-family-monospace);
+      color: var(--fg3);
+    }
+
+    /* ========== 代码块 ========== */
+    pre {
+      background: var(--bg_h);
+      border: 1px solid var(--bg2);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--font-family-monospace);
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--fg1);
+    }
+
+    code {
+      font-family: var(--font-family-monospace);
+      background: var(--bg1);
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9em;
+      color: var(--purple);
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* ========== 按钮 ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      background: var(--blue-dim);
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: var(--bg2);
+      color: var(--fg1);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg3);
+    }
+
+    /* ========== 状态标签 ========== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-green {
+      background: var(--green-dim);
+      color: var(--bg);
+    }
+
+    .badge-red {
+      background: var(--red-dim);
+      color: var(--bg);
+    }
+
+    .badge-yellow {
+      background: var(--yellow-dim);
+      color: var(--bg);
+    }
+
+    /* ========== 打印样式 ========== */
+    @media print {
+      .theme-controls {
+        display: none !important;
+      }
+
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      .card {
+        border: 1px solid #ccc;
+        break-inside: avoid;
+      }
+    }
+
+    /* ========== 响应式 ========== */
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .page-title {
+        font-size: 1.5rem;
+      }
+
+      .color-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .theme-controls {
+        top: auto;
+        bottom: 1rem;
+        right: 50%;
+        transform: translateX(50%);
+      }
+    }
   </style>
+<base target="_blank">
 </head>
 
 <body>
+  <!-- 主题切换控件 -->
+  <div class="theme-controls" role="group" aria-label="主题切换">
+    <button class="theme-btn" id="btn-dark" onclick="ThemeManager.set('theme-dark')" title="深色模式" aria-label="切换到深色模式">
+      🌙
+    </button>
+    <button class="theme-btn" id="btn-light" onclick="ThemeManager.set('theme-light')" title="浅色模式" aria-label="切换到浅色模式">
+      ☀️
+    </button>
+    <div class="theme-divider"></div>
+    <button class="theme-btn" id="btn-system" onclick="ThemeManager.followSystem()" title="跟随系统" aria-label="跟随系统主题">
+      🖥️
+    </button>
+  </div>
 
+  <div class="container">
+    <!-- 页面标题 -->
+    <header class="page-header">
+      <h1 class="page-title">🎨 主题模板示例</h1>
+      <p class="page-subtitle">基于 CSS 变量与 Gruvbox 配色方案的主题切换系统</p>
+    </header>
+
+    <!-- 功能说明卡片 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span>⚙️</span>
+        主题管理器功能
+      </h2>
+      <div class="card-body">
+        <p>
+          本模板内置 <code>ThemeManager</code> 全局对象，提供以下方法：
+        </p>
+        <pre><code>ThemeManager.set('theme-dark')      // 手动设置深色主题
+ThemeManager.set('theme-light')     // 手动设置浅色主题
+ThemeManager.toggle()               // 切换当前主题
+ThemeManager.followSystem()         // 清除手动设置，跟随系统
+ThemeManager.getCurrent()           // 获取当前主题名称
+ThemeManager.isManual()             // 检查是否手动设置过</code></pre>
+        <p>
+          手动设置的主题会持久化到 <code>localStorage</code>，刷新页面后依然生效。
+          点击右上角控件或直接在控制台调用上述方法即可切换主题。
+        </p>
+      </div>
+    </div>
+
+    <!-- 配色展示卡片 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span>🌈</span>
+        当前主题配色
+      </h2>
+      <div class="card-body">
+        <p>以下颜色随主题自动切换，所有组件均使用 CSS 变量引用：</p>
+        <div class="color-grid">
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--bg_h);"></div>
+            <span class="color-label">bg_h</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--bg);"></div>
+            <span class="color-label">bg</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--bg1);"></div>
+            <span class="color-label">bg1</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--fg);"></div>
+            <span class="color-label">fg</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--red);"></div>
+            <span class="color-label">red</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--green);"></div>
+            <span class="color-label">green</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--yellow);"></div>
+            <span class="color-label">yellow</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--blue);"></div>
+            <span class="color-label">blue</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--purple);"></div>
+            <span class="color-label">purple</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--aqua);"></div>
+            <span class="color-label">aqua</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--orange);"></div>
+            <span class="color-label">orange</span>
+          </div>
+          <div class="color-swatch">
+            <div class="color-dot" style="background: var(--gray);"></div>
+            <span class="color-label">gray</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 组件展示卡片 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span>🧩</span>
+        组件示例
+      </h2>
+      <div class="card-body">
+        <p>
+          <span class="badge badge-green">正常</span>
+          <span class="badge badge-yellow">警告</span>
+          <span class="badge badge-red">错误</span>
+        </p>
+        <p>
+          <button class="btn btn-primary">主要按钮</button>
+          <button class="btn btn-secondary">次要按钮</button>
+        </p>
+        <p>
+          这是一段包含 <code>inline code</code> 的文本，用于展示代码样式。
+        </p>
+      </div>
+    </div>
+
+    <!-- 初始化状态卡片 -->
+    <div class="card">
+      <h2 class="card-title">
+        <span>📊</span>
+        当前状态
+      </h2>
+      <div class="card-body">
+        <p id="status-text">正在检测主题状态...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== 同步按钮激活状态 ==========
+    function updateThemeButtons() {
+      const current = ThemeManager.getCurrent();
+      const isManual = ThemeManager.isManual();
+
+      document.getElementById('btn-dark').classList.toggle('active', current === 'theme-dark');
+      document.getElementById('btn-light').classList.toggle('active', current === 'theme-light');
+      document.getElementById('btn-system').classList.toggle('active', !isManual);
+
+      // 更新状态文本
+      const statusText = document.getElementById('status-text');
+      if (statusText) {
+        const mode = current === 'theme-dark' ? '深色模式' : '浅色模式';
+        const source = isManual ? '手动设置' : '跟随系统';
+        statusText.textContent = `当前主题：${mode}（${source}）`;
+      }
+    }
+
+    // 监听主题变化（通过 MutationObserver 检测 class 变化）
+    const observer = new MutationObserver(updateThemeButtons);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // 初始化按钮状态
+    updateThemeButtons();
+
+    // 监听系统主题变化（用于更新"跟随系统"按钮状态）
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+      if (!ThemeManager.isManual()) {
+        updateThemeButtons();
+      }
+    });
+  </script>
 </body>
 
 </html>
