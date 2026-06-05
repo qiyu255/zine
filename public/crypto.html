@@ -1,11 +1,89 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-hans" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenSSL 加解密工具</title>
+    <meta name="theme-color" content="#282828" id="theme-color-meta">
+    <title>前端加解密工具</title>
+    <meta name="description" content="基于Web Crypto API的前端加解密工具，兼容OpenSSL格式">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme-preference');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let resolvedTheme;
+            let preference;
+
+            if (saved === 'dark' || saved === 'light' || saved === 'auto') {
+                preference = saved;
+            } else {
+                preference = 'auto';
+            }
+
+            if (preference === 'auto') {
+                resolvedTheme = systemDark ? 'dark' : 'light';
+            } else {
+                resolvedTheme = preference;
+            }
+
+            document.documentElement.setAttribute('data-theme', resolvedTheme);
+            document.documentElement.setAttribute('data-theme-preference', preference);
+
+            const meta = document.getElementById('theme-color-meta');
+            if (meta) {
+                meta.setAttribute('content', resolvedTheme === 'dark' ? '#282828' : '#fbf1c7');
+            }
+        })();
+    </script>
     <style>
         :root {
+            --font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                "Helvetica Neue",
+                Arial,
+                "Noto Sans",
+                "Liberation Sans",
+                sans-serif,
+                "Apple Color Emoji",
+                "Segoe UI Emoji",
+                "Segoe UI Symbol",
+                "Noto Color Emoji",
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "WenQuanYi Micro Hei",
+                sans-serif;
+
+            --font-family-monospace:
+                SFMono-Regular,
+                Menlo,
+                Monaco,
+                Consolas,
+                "Liberation Mono",
+                "Courier New",
+                "JetBrains Mono",
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                monospace;
+
+            --transition-time: 0.2s;
+            --transition-time-slow: 0.3s;
+            --radius-sm: 2px;
+            --radius: 4px;
+            --breakpoint-sm: 576px;
+            --breakpoint-md: 768px;
+            --breakpoint-lg: 992px;
+            --breakpoint-xl: 1200px;
+            font-size: 16px;
+        }
+
+        [data-theme="dark"] {
+            color-scheme: dark;
             --bg_h: #1d2021;
             --bg: #282828;
             --bg_s: #32302f;
@@ -34,590 +112,644 @@
             --aqua-dim: #689d6a;
             --gray-dim: #a89984;
             --orange-dim: #d65d0e;
-            --radius: 10px;
-            --radius-sm: 6px;
-            --transition: 0.2s ease;
-            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', 'Menlo', monospace;
-            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
 
-        * {
+        [data-theme="light"] {
+            color-scheme: light;
+            --bg_h: #f9f5d7;
+            --bg: #fbf1c7;
+            --bg_s: #f2e5bc;
+            --bg1: #ebdbb2;
+            --bg2: #d5c4a1;
+            --bg3: #bdae93;
+            --bg4: #a89984;
+            --fg: #282828;
+            --fg1: #3c3836;
+            --fg2: #504945;
+            --fg3: #665c54;
+            --fg4: #7c6f64;
+            --red: #9d0006;
+            --green: #79740e;
+            --yellow: #b57614;
+            --blue: #076678;
+            --purple: #8f3f71;
+            --aqua: #427b58;
+            --orange: #af3a03;
+            --gray: #928374;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458598;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --orange-dim: #d65d0e;
+            --gray-dim: #7c6f64;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            background: var(--bg_h);
-            color: var(--fg);
-            font-family: var(--font-sans);
+            font-family: var(--font-family);
+            background-color: var(--bg);
+            color: var(--fg1);
+            line-height: 1.5;
             min-height: 100vh;
+            padding: 1.25rem;
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 16px;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        .container {
+        .app-container {
             width: 100%;
-            max-width: 680px;
-            background: var(--bg);
-            border-radius: 16px;
-            padding: 28px 24px 24px;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--bg1);
-            position: relative;
-        }
-
-        .header {
+            max-width: 780px;
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .header-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: var(--radius-sm);
-            background: var(--bg_s);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: var(--aqua);
-            flex-shrink: 0;
-            border: 1px solid var(--bg2);
-        }
-
-        .header-title {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--fg);
-            letter-spacing: -0.01em;
-        }
-        .header-subtitle {
-            font-size: 0.8rem;
-            color: var(--fg4);
-            font-weight: 400;
-            margin-top: -2px;
-        }
-
-        /* 模式切换标签 */
-        .mode-tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--bg_s);
-            border-radius: var(--radius);
-            padding: 4px;
-            margin-bottom: 20px;
-            border: 1px solid var(--bg1);
-        }
-        .mode-tab {
-            flex: 1;
-            padding: 10px 16px;
-            border-radius: calc(var(--radius) - 3px);
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            font-family: var(--font-sans);
-            transition: all var(--transition);
-            background: transparent;
-            color: var(--fg3);
-            text-align: center;
-            white-space: nowrap;
-            letter-spacing: 0.01em;
-        }
-        .mode-tab.active {
-            background: var(--bg1);
-            color: var(--fg);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        }
-        .mode-tab:hover:not(.active) {
-            color: var(--fg2);
-            background: rgba(255, 255, 255, 0.03);
-        }
-        .mode-tab.encrypt-tab.active {
-            color: var(--aqua);
-        }
-        .mode-tab.decrypt-tab.active {
+        .app-title {
             color: var(--yellow);
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin: 0;
         }
 
-        /* 表单行 */
-        .form-row {
-            margin-bottom: 14px;
-        }
-        .form-row.two-cols {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .form-label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
+        .app-description {
             color: var(--fg3);
-            margin-bottom: 5px;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-        }
-        .form-label .optional {
-            font-weight: 400;
-            color: var(--fg4);
-            text-transform: none;
-            font-size: 0.72rem;
-            margin-left: 4px;
-        }
-
-        textarea,
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            background: var(--bg_s);
-            border: 1px solid var(--bg2);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-            font-size: 0.9rem;
-            color: var(--fg);
-            font-family: var(--font-mono);
-            resize: vertical;
-            transition: border-color var(--transition), box-shadow var(--transition);
+            font-size: 0.875rem;
             line-height: 1.5;
-            outline: none;
-        }
-        textarea:focus,
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.12);
-        }
-        textarea {
-            min-height: 100px;
-            max-height: 280px;
-        }
-        textarea.output-area {
-            min-height: 90px;
-            max-height: 220px;
-            background: var(--bg_h);
-            border-color: var(--bg3);
-            cursor: default;
-        }
-        textarea.output-area:focus {
-            border-color: var(--bg3);
-            box-shadow: none;
-        }
-        .password-wrapper {
-            position: relative;
-        }
-        .password-wrapper input {
-            padding-right: 44px;
-        }
-        .toggle-password {
-            position: absolute;
-            right: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--fg4);
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 1rem;
-            line-height: 1;
-            transition: color var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 34px;
-            min-height: 34px;
-        }
-        .toggle-password:hover {
-            color: var(--fg2);
         }
 
-        select {
-            width: 100%;
-            background: var(--bg_s);
-            border: 1px solid var(--bg2);
-            border-radius: var(--radius-sm);
-            padding: 11px 14px;
-            font-size: 0.9rem;
-            color: var(--fg);
-            font-family: var(--font-sans);
-            cursor: pointer;
-            outline: none;
-            transition: border-color var(--transition), box-shadow var(--transition);
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a89984' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 36px;
-        }
-        select:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(131, 165, 152, 0.12);
-        }
-        select option {
-            background: var(--bg_s);
-            color: var(--fg);
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
         }
 
-        .btn-row {
+        .label-bar {
             display: flex;
-            gap: 10px;
-            margin-top: 18px;
+            align-items: baseline;
+            gap: 0.5rem;
             flex-wrap: wrap;
+            min-height: 1.75rem;
         }
-        .btn {
-            padding: 11px 22px;
-            border-radius: var(--radius-sm);
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
+
+        .label-text {
+            color: var(--green-dim);
+            font-size: 0.875rem;
             font-weight: 600;
-            font-family: var(--font-sans);
-            letter-spacing: 0.02em;
-            transition: all var(--transition);
+            flex-shrink: 0;
+            line-height: 1.75rem;
+        }
+
+        .label-stats {
+            color: var(--fg4);
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            line-height: 1.75rem;
+        }
+
+        .btn-text {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            white-space: nowrap;
-            text-align: center;
             justify-content: center;
-        }
-        .btn-primary {
-            background: var(--blue);
-            color: #1d2021;
-            flex: 1;
-            min-width: 120px;
-        }
-        .btn-primary:hover {
-            background: var(--blue-dim);
-            filter: brightness(1.15);
-            box-shadow: 0 4px 14px rgba(131, 165, 152, 0.25);
-        }
-        .btn-primary:active {
-            transform: scale(0.97);
-            transition: transform 0.08s ease;
-        }
-        .btn-secondary {
-            background: var(--bg1);
+            background: none;
+            border: none;
             color: var(--fg2);
-            border: 1px solid var(--bg3);
+            font-family: var(--font-family);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            line-height: 1.5;
+            transition: color var(--transition-time) ease;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-radius: var(--radius-sm);
+            min-height: 1.75rem;
         }
-        .btn-secondary:hover {
-            background: var(--bg2);
+
+        .btn-text:hover {
             color: var(--fg);
         }
-        .btn-copy {
-            background: var(--bg1);
-            color: var(--aqua);
-            border: 1px solid var(--bg3);
-            font-size: 0.82rem;
-            padding: 8px 14px;
-        }
-        .btn-copy:hover {
-            background: var(--bg2);
-            border-color: var(--aqua-dim);
-            color: var(--aqua);
-        }
-        .btn-copy.copied {
-            background: var(--green-dim);
-            color: #1d2021;
-            border-color: var(--green-dim);
-            transition: all 0.25s ease;
+
+        .btn-text:active {
+            color: var(--fg1);
         }
 
-        .status-msg {
-            font-size: 0.78rem;
-            padding: 8px 12px;
-            border-radius: var(--radius-sm);
-            margin-top: 12px;
-            display: none;
-            font-weight: 500;
-            letter-spacing: 0.01em;
-            line-height: 1.4;
+        .btn-text.btn-flex {
+            flex-grow: 1;
+            justify-content: flex-start;
+            text-align: left;
+            min-width: 0;
         }
-        .status-msg.show {
-            display: block;
-            animation: fadeIn 0.25s ease;
-        }
-        .status-msg.success {
-            background: rgba(184, 187, 38, 0.12);
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: 1px solid var(--green);
             color: var(--green);
-            border: 1px solid rgba(184, 187, 38, 0.3);
-        }
-        .status-msg.error {
-            background: rgba(251, 73, 52, 0.12);
-            color: var(--red);
-            border: 1px solid rgba(251, 73, 52, 0.3);
-        }
-        .status-msg.info {
-            background: rgba(131, 165, 152, 0.1);
-            color: var(--blue);
-            border: 1px solid rgba(131, 165, 152, 0.25);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-4px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            font-family: var(--font-family);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.35rem 1rem;
+            line-height: 1.5;
+            border-radius: var(--radius-sm);
+            transition: background-color var(--transition-time) ease;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-height: 2rem;
         }
 
-        .output-section {
-            margin-top: 6px;
+        .btn-outline:hover {
+            background-color: var(--bg_s);
+        }
+
+        .btn-outline:active {
+            background-color: var(--bg1);
+        }
+
+        .textarea,
+        .card-placeholder {
+            width: 100%;
+            height: 180px;
+            font-family: var(--font-family-monospace);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg_h);
+            color: var(--fg);
+            resize: none;
+            outline: none;
+            transition: border-color var(--transition-time) ease;
+            display: block;
+        }
+
+        .textarea:focus {
+            border-color: var(--green);
+        }
+
+        .textarea[readonly] {
+            cursor: default;
+            background-color: var(--bg_s);
+        }
+
+        .card-placeholder {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .card-placeholder.hidden,
+        .textarea.hidden {
+            display: none;
+        }
+
+        .file-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .file-card-name {
+            flex: 1 1 auto;
+            overflow: hidden;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            white-space: normal;
+            color: var(--fg1);
+            font-size: 0.875rem;
+            line-height: 1.4;
+            min-height: 0;
+            padding-bottom: 0.4rem;
+        }
+
+        .file-card-meta {
+            flex-shrink: 0;
+            color: var(--fg4);
+            font-size: 0.8rem;
+            line-height: 1.3;
+            padding-top: 0.4rem;
+            border-top: 1px solid var(--bg2);
+        }
+
+        .input-wrapper {
             position: relative;
         }
-        .output-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            flex-wrap: wrap;
-            gap: 8px;
+
+        .input-wrapper.drag-over .textarea,
+        .input-wrapper.drag-over .card-placeholder {
+            border-color: var(--green);
         }
 
-        /* 盐值信息标签 */
-        .salt-info {
-            font-size: 0.7rem;
-            color: var(--fg4);
-            font-family: var(--font-mono);
-            background: var(--bg_s);
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px solid var(--bg2);
-            word-break: break-all;
-            max-width: 100%;
-            display: none;
-            margin-top: 8px;
+        .password-input {
+            width: 100%;
+            font-family: var(--font-family-monospace);
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg_h);
+            color: var(--fg);
+            outline: none;
+            transition: border-color var(--transition-time) ease;
             line-height: 1.5;
         }
-        .salt-info.show {
-            display: block;
-        }
-        .salt-info span {
-            color: var(--yellow-dim);
+
+        .password-input:focus {
+            border-color: var(--green);
         }
 
-        /* 响应式 */
-        @media (max-width: 520px) {
-            .container {
-                padding: 18px 14px 16px;
-                border-radius: 12px;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        .action-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            min-height: 2.25rem;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--fg2);
+            font-size: 0.85rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            line-height: 1.75rem;
+            user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--green);
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .iter-input {
+            border: none;
+            border-bottom: 1px solid var(--bg3);
+            background: none;
+            color: var(--fg);
+            font-family: var(--font-family-monospace);
+            font-size: 0.8rem;
+            padding: 0.2rem 0.25rem;
+            min-width: 5.5rem;
+            outline: none;
+            transition: border-color var(--transition-time) ease;
+            line-height: 1.5;
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .iter-input:focus {
+            border-bottom-color: var(--green);
+        }
+
+        .iter-label {
+            color: var(--fg2);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            line-height: 1.75rem;
+            margin-left: 0.75rem;
+        }
+
+        .status-bar {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            min-height: 1.25rem;
+            color: var(--fg4);
+            transition: color var(--transition-time) ease;
+            word-break: break-all;
+        }
+
+        .status-bar.status-success {
+            color: var(--green);
+        }
+
+        .status-bar.status-error {
+            color: var(--orange);
+        }
+
+        .warning-card {
+            display: flex;
+            flex-direction: column;
+            height: 180px;
+            width: 100%;
+            border: 1px solid var(--orange);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg_h);
+            padding: 0.75rem 0.85rem;
+            gap: 0.6rem;
+            overflow: hidden;
+        }
+
+        .warning-card.hidden {
+            display: none;
+        }
+
+        .warning-text {
+            color: var(--orange);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .warning-actions {
+            flex-shrink: 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .hint-bar {
+            font-size: 0.78rem;
+            color: var(--fg4);
+            line-height: 1.5;
+            word-break: break-all;
+            font-family: var(--font-family-monospace);
+            background-color: var(--bg_h);
+            padding: 0.5rem 0.7rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--bg3);
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 576px) {
+            body {
+                padding: 0.75rem;
             }
-            .header {
-                margin-bottom: 16px;
-                gap: 8px;
+            .app-container {
+                gap: 0.75rem;
             }
-            .header-icon {
-                width: 34px;
-                height: 34px;
-                font-size: 18px;
-                border-radius: 5px;
+            .app-title {
+                font-size: 1.25rem;
             }
-            .header-title {
-                font-size: 1.15rem;
+            .textarea,
+            .card-placeholder,
+            .warning-card {
+                height: 150px;
             }
-            .header-subtitle {
-                font-size: 0.7rem;
+            .action-bar {
+                gap: 0.4rem;
             }
-            .mode-tab {
-                padding: 9px 10px;
+            .btn-outline {
+                padding: 0.35rem 0.75rem;
                 font-size: 0.8rem;
             }
-            .form-row.two-cols {
-                grid-template-columns: 1fr;
-                gap: 10px;
+            .btn-text {
+                font-size: 0.8rem;
+                padding: 0.2rem 0.4rem;
             }
-            textarea {
-                min-height: 80px;
-                font-size: 0.82rem;
-                padding: 10px 12px;
-            }
-            input[type="text"],
-            input[type="password"] {
-                font-size: 0.82rem;
-                padding: 10px 12px;
-            }
-            select {
-                font-size: 0.82rem;
-                padding: 10px 12px;
-                padding-right: 32px;
-            }
-            .btn {
-                padding: 10px 16px;
-                font-size: 0.82rem;
-            }
-            .btn-row {
-                gap: 8px;
-            }
-            .form-label {
-                font-size: 0.72rem;
-            }
-            .status-msg {
-                font-size: 0.7rem;
-            }
-            .toggle-password {
-                min-width: 30px;
-                min-height: 30px;
-                padding: 6px;
-            }
-        }
-        @media (max-width: 360px) {
-            .container {
-                padding: 12px 10px 12px;
-            }
-            .mode-tabs {
-                gap: 2px;
-                padding: 3px;
-            }
-            .mode-tab {
-                padding: 8px 6px;
-                font-size: 0.74rem;
-            }
-            .btn-row {
-                flex-direction: column;
-            }
-            .btn {
-                width: 100%;
+            .iter-input {
+                width: 4.5rem;
+                font-size: 0.75rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- 头部 -->
-        <div class="header">
-            <div class="header-icon">🔐</div>
-            <div>
-                <div class="header-title">OpenSSL 加解密</div>
-                <div class="header-subtitle">兼容 OpenSSL Salted 格式 · 客户端处理</div>
+    <div class="app-container">
+        <h1 class="app-title">前端加解密工具</h1>
+        <p class="app-description">
+            基于 Web Crypto API 的 AES-256-CBC 加解密，密钥派生使用 PBKDF2。
+            所有运算均在浏览器本地完成，数据不会上传到任何服务器。密文兼容 OpenSSL 格式（<code>Salted__</code> 头 + salt + 密文）。
+        </p>
+
+        <div class="section" id="input-section">
+            <div class="label-bar">
+                <span class="label-text">输入</span>
+                <button class="btn-text btn-flex" id="file-upload-btn" type="button" title="点击上传文件（也可拖拽到输入区域）">上传文件</button>
+                <span class="label-stats" id="input-char-count">0 字符</span>
+                <button class="btn-text" id="clear-input-btn" type="button">清空</button>
+            </div>
+            <div class="input-wrapper" id="input-wrapper">
+                <textarea class="textarea" id="input-textarea" placeholder="在此输入文本，或拖拽文件到此处..."></textarea>
+                <div class="card-placeholder hidden" id="file-card-placeholder">
+                    <div class="file-card">
+                        <div class="file-card-name" id="file-card-name"></div>
+                        <div class="file-card-meta" id="file-card-meta"></div>
+                    </div>
+                </div>
+            </div>
+            <input type="file" id="hidden-file-input" style="display:none;" aria-hidden="true">
+        </div>
+
+        <div class="section">
+            <label class="label-text" for="password-input" style="display:block;margin-bottom:0.1rem;">密码</label>
+            <input type="password" class="password-input" id="password-input" placeholder="输入密码...">
+        </div>
+
+        <div class="action-bar">
+            <label class="checkbox-label">
+                <input type="checkbox" id="decrypt-checkbox">
+                <span>解密</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="base64-checkbox" checked>
+                <span>Base64</span>
+            </label>
+            <span class="iter-label">迭代</span>
+            <input type="number" class="iter-input" id="iter-input" value="10000" min="1" max="99999999" step="1">
+            <span style="flex-grow:1;min-width:0.5rem;"></span>
+            <button class="btn-outline" id="action-btn" type="button">加密</button>
+        </div>
+
+        <div class="status-bar" id="status-bar"></div>
+
+        <div class="section" id="output-section">
+            <div class="label-bar">
+                <span class="label-text">输出</span>
+                <button class="btn-text btn-flex" id="download-btn" type="button">下载文件</button>
+                <span class="label-stats" id="output-char-count">0 字符</span>
+                <button class="btn-text" id="copy-btn" type="button">复制</button>
+            </div>
+            <div style="position:relative;">
+                <textarea class="textarea" id="output-textarea" readonly placeholder="输出结果将显示在这里..."></textarea>
+                <div class="warning-card hidden" id="output-warning">
+                    <div class="warning-text" id="warning-text"></div>
+                    <div class="warning-actions">
+                        <button class="btn-outline" id="load-output-btn" type="button">加载</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- 模式切换 -->
-        <div class="mode-tabs" id="modeTabs">
-            <button class="mode-tab encrypt-tab active" data-mode="encrypt" id="tabEncrypt">
-                🔒 加密 Encrypt
-            </button>
-            <button class="mode-tab decrypt-tab" data-mode="decrypt" id="tabDecrypt">
-                🔓 解密 Decrypt
-            </button>
-        </div>
-
-        <!-- 加密模式特有：明文输入 -->
-        <div class="form-row" id="plaintextRow">
-            <label class="form-label" for="plaintextInput">明文 Plaintext</label>
-            <textarea id="plaintextInput" placeholder="输入要加密的文本...&#10;支持中文、英文、任意字符" rows="3"></textarea>
-        </div>
-
-        <!-- 解密模式特有：密文输入 -->
-        <div class="form-row" id="ciphertextRow" style="display:none;">
-            <label class="form-label" for="ciphertextInput">密文 Ciphertext <span class="optional">(Base64, OpenSSL Salted 格式)</span></label>
-            <textarea id="ciphertextInput" placeholder="粘贴 Base64 编码的 OpenSSL 密文..." rows="3"></textarea>
-        </div>
-
-        <!-- 密码 -->
-        <div class="form-row">
-            <label class="form-label" for="passwordInput">密码 Passphrase</label>
-            <div class="password-wrapper">
-                <input type="password" id="passwordInput" placeholder="输入加密/解密密码" autocomplete="off">
-                <button class="toggle-password" id="togglePwdBtn" title="显示/隐藏密码" type="button">
-                    👁️
-                </button>
-            </div>
-        </div>
-
-        <!-- 算法 & KDF -->
-        <div class="form-row two-cols">
-            <div>
-                <label class="form-label" for="algorithmSelect">加密算法</label>
-                <select id="algorithmSelect">
-                    <option value="aes-256-cbc" selected>AES-256-CBC</option>
-                    <option value="aes-192-cbc">AES-192-CBC</option>
-                    <option value="aes-128-cbc">AES-128-CBC</option>
-                    <option value="aes-256-gcm">AES-256-GCM</option>
-                    <option value="aes-128-gcm">AES-128-GCM</option>
-                    <option value="des-ede3-cbc">3DES-CBC (DES-EDE3)</option>
-                    <option value="des-cbc">DES-CBC</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label" for="kdfSelect">密钥派生 KDF</label>
-                <select id="kdfSelect">
-                    <option value="md5" selected>MD5 (传统 OpenSSL)</option>
-                    <option value="sha256">SHA-256 (OpenSSL 1.1.0+)</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- 按钮 -->
-        <div class="btn-row">
-            <button class="btn btn-primary" id="btnAction">
-                🔒 执行加密
-            </button>
-            <button class="btn btn-secondary" id="btnClear">
-                🗑️ 清空
-            </button>
-            <button class="btn btn-secondary" id="btnSwap" title="交换输入输出">
-                ⇄ 交换
-            </button>
-        </div>
-
-        <!-- 状态消息 -->
-        <div class="status-msg" id="statusMsg"></div>
-
-        <!-- 输出区域 -->
-        <div class="output-section" id="outputSection">
-            <div class="output-header">
-                <label class="form-label" id="outputLabel" style="margin-bottom:0;">密文输出</label>
-                <button class="btn btn-copy" id="btnCopy" title="复制到剪贴板">📋 复制</button>
-            </div>
-            <textarea class="output-area" id="outputArea" readonly rows="2" placeholder="输出结果将显示在这里..."></textarea>
-            <div class="salt-info" id="saltInfo"></div>
-        </div>
+        <div class="hint-bar" id="hint-bar"></div>
     </div>
 
     <script>
-        (function() {
-            // ==================== DOM元素 ====================
-            const modeTabs = document.getElementById('modeTabs');
-            const tabEncrypt = document.getElementById('tabEncrypt');
-            const tabDecrypt = document.getElementById('tabDecrypt');
-            const plaintextRow = document.getElementById('plaintextRow');
-            const ciphertextRow = document.getElementById('ciphertextRow');
-            const plaintextInput = document.getElementById('plaintextInput');
-            const ciphertextInput = document.getElementById('ciphertextInput');
-            const passwordInput = document.getElementById('passwordInput');
-            const togglePwdBtn = document.getElementById('togglePwdBtn');
-            const algorithmSelect = document.getElementById('algorithmSelect');
-            const kdfSelect = document.getElementById('kdfSelect');
-            const btnAction = document.getElementById('btnAction');
-            const btnClear = document.getElementById('btnClear');
-            const btnSwap = document.getElementById('btnSwap');
-            const btnCopy = document.getElementById('btnCopy');
-            const outputArea = document.getElementById('outputArea');
-            const outputLabel = document.getElementById('outputLabel');
-            const statusMsg = document.getElementById('statusMsg');
-            const saltInfo = document.getElementById('saltInfo');
+        (function () {
+            const inputTextarea = document.getElementById('input-textarea');
+            const fileCardPlaceholder = document.getElementById('file-card-placeholder');
+            const fileCardName = document.getElementById('file-card-name');
+            const fileCardMeta = document.getElementById('file-card-meta');
+            const inputCharCount = document.getElementById('input-char-count');
+            const inputWrapper = document.getElementById('input-wrapper');
+            const hiddenFileInput = document.getElementById('hidden-file-input');
+            const fileUploadBtn = document.getElementById('file-upload-btn');
+            const clearInputBtn = document.getElementById('clear-input-btn');
+            const passwordInput = document.getElementById('password-input');
+            const decryptCheckbox = document.getElementById('decrypt-checkbox');
+            const base64Checkbox = document.getElementById('base64-checkbox');
+            const iterInput = document.getElementById('iter-input');
+            const actionBtn = document.getElementById('action-btn');
+            const statusBar = document.getElementById('status-bar');
+            const outputTextarea = document.getElementById('output-textarea');
+            const outputWarning = document.getElementById('output-warning');
+            const warningText = document.getElementById('warning-text');
+            const loadOutputBtn = document.getElementById('load-output-btn');
+            const outputCharCount = document.getElementById('output-char-count');
+            const downloadBtn = document.getElementById('download-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const hintBar = document.getElementById('hint-bar');
 
-            let currentMode = 'encrypt'; // 'encrypt' | 'decrypt'
+            let currentFile = null;
+            let currentFileData = null;
+            let lastOperationOutput = null;
+            let lastOutputIsBinary = false;
+            let lastOutputMimeType = 'text/plain';
+            let outputIsHiddenByWarning = false;
+            let pendingOutputText = null;
 
-            // ==================== 工具函数 ====================
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const k = 1024;
+                const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
+                const size = bytes / Math.pow(k, i);
+                if (i === 0) return size + ' ' + units[i];
+                return size.toFixed(1) + ' ' + units[i];
+            }
+
+            function isFileMode() {
+                return currentFile !== null;
+            }
+
+            function updateInputUI() {
+                if (isFileMode()) {
+                    inputTextarea.classList.add('hidden');
+                    fileCardPlaceholder.classList.remove('hidden');
+                    fileCardName.textContent = currentFile.name;
+                    fileCardMeta.textContent = '大小: ' + formatFileSize(currentFile.size);
+                    inputCharCount.textContent = '';
+                } else {
+                    inputTextarea.classList.remove('hidden');
+                    fileCardPlaceholder.classList.add('hidden');
+                    const len = inputTextarea.value.length;
+                    inputCharCount.textContent = len + ' 字符';
+                }
+            }
+
+            function setStatus(message, type) {
+                statusBar.textContent = message;
+                statusBar.className = 'status-bar';
+                if (type === 'success') {
+                    statusBar.classList.add('status-success');
+                } else if (type === 'error') {
+                    statusBar.classList.add('status-error');
+                }
+            }
+
+            function clearStatus() {
+                statusBar.textContent = '';
+                statusBar.className = 'status-bar';
+            }
+
+            function hideOutputWarning() {
+                outputWarning.classList.add('hidden');
+                outputTextarea.classList.remove('hidden');
+                outputIsHiddenByWarning = false;
+                pendingOutputText = null;
+            }
+
+            function showOutputWarning(message) {
+                warningText.textContent = message;
+                outputWarning.classList.remove('hidden');
+                outputTextarea.classList.add('hidden');
+                outputIsHiddenByWarning = true;
+                pendingOutputText = lastOperationOutput;
+            }
+
+            function setOutput(text, isBinary, mimeType) {
+                lastOperationOutput = text;
+                lastOutputIsBinary = !!isBinary;
+                lastOutputMimeType = mimeType || 'text/plain';
+                pendingOutputText = text;
+
+                const isDecryptMode = decryptCheckbox.checked;
+                const useBase64 = base64Checkbox.checked;
+
+                let shouldWarn = false;
+                if (!isDecryptMode) {
+                    if (!useBase64) {
+                        shouldWarn = true;
+                    } else if (text && text.length > 1024 * 1024) {
+                        shouldWarn = true;
+                    }
+                }
+
+                if (shouldWarn) {
+                    let warnMsg = '';
+                    if (!isDecryptMode && !useBase64) {
+                        warnMsg = '当前为加密模式且未启用 Base64 编码。输出包含原始二进制数据，在文本框中显示可能导致乱码或数据损坏。建议启用 Base64 编码后再操作，或直接下载文件。';
+                    } else if (!isDecryptMode && text && text.length > 1024 * 1024) {
+                        warnMsg = '输出内容超过 1MB，在文本框中加载可能导致页面卡顿。建议直接下载文件，或点击"加载"按钮确认显示。';
+                    }
+                    showOutputWarning(warnMsg);
+                } else {
+                    outputTextarea.value = text || '';
+                    outputCharCount.textContent = (text || '').length + ' 字符';
+                    hideOutputWarning();
+                }
+            }
+
+            function clearOutput() {
+                outputTextarea.value = '';
+                outputCharCount.textContent = '0 字符';
+                lastOperationOutput = null;
+                lastOutputIsBinary = false;
+                lastOutputMimeType = 'text/plain';
+                outputIsHiddenByWarning = false;
+                pendingOutputText = null;
+                hideOutputWarning();
+            }
+
+            function clearInput() {
+                currentFile = null;
+                currentFileData = null;
+                inputTextarea.value = '';
+                hiddenFileInput.value = '';
+                passwordInput.value = '';
+                updateInputUI();
+                clearOutput();
+                clearStatus();
+            }
+
             function arrayBufferToBase64(buffer) {
                 const bytes = new Uint8Array(buffer);
                 let binary = '';
@@ -628,7 +760,8 @@
             }
 
             function base64ToArrayBuffer(base64) {
-                const binary = atob(base64);
+                const cleaned = base64.replace(/[\r\n\s]/g, '');
+                const binary = atob(cleaned);
                 const bytes = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) {
                     bytes[i] = binary.charCodeAt(i);
@@ -636,576 +769,395 @@
                 return bytes.buffer;
             }
 
-            function stringToArrayBuffer(str) {
+            function textToArrayBuffer(text) {
                 const encoder = new TextEncoder();
-                return encoder.encode(str).buffer;
+                return encoder.encode(text).buffer;
             }
 
-            function arrayBufferToString(buffer) {
-                const decoder = new TextDecoder();
+            function arrayBufferToText(buffer) {
+                const decoder = new TextDecoder('utf-8', { fatal: false });
                 return decoder.decode(new Uint8Array(buffer));
             }
 
-            function hexFromBytes(bytes) {
-                return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            function generateRandomSalt() {
+                const salt = new Uint8Array(8);
+                crypto.getRandomValues(salt);
+                return salt;
             }
 
-            function concatArrayBuffers(...buffers) {
-                const totalLength = buffers.reduce((sum, buf) => sum + buf.byteLength, 0);
-                const result = new Uint8Array(totalLength);
-                let offset = 0;
-                for (const buf of buffers) {
-                    result.set(new Uint8Array(buf), offset);
-                    offset += buf.byteLength;
-                }
-                return result.buffer;
-            }
-
-            // ==================== MD5 实现 (RFC 1321) ====================
-            function md5Hash(data) {
-                // data: ArrayBuffer
-                const msg = new Uint8Array(data);
-                const msgLen = msg.length;
-                // 填充
-                const paddedLen = (((msgLen + 8) >>> 6) + 1) << 6; // 向上取整到512位(64字节)的倍数
-                const padded = new Uint8Array(paddedLen);
-                padded.set(msg);
-                padded[msgLen] = 0x80;
-                // 写入原始长度（以位为单位，小端序）
-                const bitLen = msgLen * 8;
-                const lenView = new DataView(padded.buffer, paddedLen - 8, 8);
-                lenView.setUint32(0, bitLen & 0xFFFFFFFF, true);
-                lenView.setUint32(4, Math.floor(bitLen / 0x100000000), true);
-
-                // MD5初始值
-                let a = 0x67452301;
-                let b = 0xefcdab89;
-                let c = 0x98badcfe;
-                let d = 0x10325476;
-
-                // 每轮移位量
-                const S = [
-                    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-                    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-                    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-                    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
-                ];
-
-                // T表: floor(2^32 * |sin(i)|)
-                const T = [];
-                for (let i = 0; i < 64; i++) {
-                    T[i] = Math.floor(0x100000000 * Math.abs(Math.sin(i + 1)));
-                }
-
-                // 处理每个512位块
-                for (let blockStart = 0; blockStart < paddedLen; blockStart += 64) {
-                    const block = new DataView(padded.buffer, blockStart, 64);
-                    const M = [];
-                    for (let i = 0; i < 16; i++) {
-                        M[i] = block.getUint32(i * 4, true);
-                    }
-
-                    let A = a,
-                        B = b,
-                        C = c,
-                        D = d;
-
-                    for (let i = 0; i < 64; i++) {
-                        let F, g;
-                        if (i < 16) {
-                            F = (B & C) | (~B & D);
-                            g = i;
-                        } else if (i < 32) {
-                            F = (D & B) | (~D & C);
-                            g = (5 * i + 1) % 16;
-                        } else if (i < 48) {
-                            F = B ^ C ^ D;
-                            g = (3 * i + 5) % 16;
-                        } else {
-                            F = C ^ (B | ~D);
-                            g = (7 * i) % 16;
-                        }
-                        const temp = D;
-                        D = C;
-                        C = B;
-                        const val = (A + F + T[i] + M[g]) >>> 0;
-                        B = (B + ((val << S[i]) | (val >>> (32 - S[i])))) >>> 0;
-                        A = temp;
-                    }
-
-                    a = (a + A) >>> 0;
-                    b = (b + B) >>> 0;
-                    c = (c + C) >>> 0;
-                    d = (d + D) >>> 0;
-                }
-
-                // 输出小端序字节
-                const result = new ArrayBuffer(16);
-                const resultView = new DataView(result);
-                resultView.setUint32(0, a, true);
-                resultView.setUint32(4, b, true);
-                resultView.setUint32(8, c, true);
-                resultView.setUint32(12, d, true);
-                return result;
-            }
-
-            // ==================== EVP_BytesToKey ====================
-            async function evpBytesToKey(password, salt, keyLen, ivLen, hashAlgo) {
-                // password: string, salt: ArrayBuffer(8字节), hashAlgo: 'md5'|'sha256'
-                const passwordBytes = stringToArrayBuffer(password);
-                const totalLen = keyLen + ivLen;
-                const derived = [];
-                let prevHash = new ArrayBuffer(0);
-
-                while (derived.reduce((s, b) => s + b.byteLength, 0) < totalLen) {
-                    const toHashParts = [prevHash, passwordBytes, salt];
-                    const toHash = concatArrayBuffers(...toHashParts);
-
-                    let hashResult;
-                    if (hashAlgo === 'md5') {
-                        hashResult = md5Hash(toHash);
-                    } else {
-                        hashResult = await crypto.subtle.digest('SHA-256', toHash);
-                    }
-                    derived.push(hashResult);
-                    prevHash = hashResult;
-                }
-
-                const combined = concatArrayBuffers(...derived);
-                const combinedBytes = new Uint8Array(combined);
-                const key = combinedBytes.slice(0, keyLen).buffer;
-                const iv = combinedBytes.slice(keyLen, keyLen + ivLen).buffer;
-                return { key, iv };
-            }
-
-            // ==================== 算法参数 ====================
-            function getAlgorithmParams(algoName) {
-                const params = {
-                    'aes-256-cbc': { name: 'AES-CBC', keyLen: 32, ivLen: 16, webCryptoName: 'AES-CBC' },
-                    'aes-192-cbc': { name: 'AES-CBC', keyLen: 24, ivLen: 16, webCryptoName: 'AES-CBC' },
-                    'aes-128-cbc': { name: 'AES-CBC', keyLen: 16, ivLen: 16, webCryptoName: 'AES-CBC' },
-                    'aes-256-gcm': { name: 'AES-GCM', keyLen: 32, ivLen: 12, webCryptoName: 'AES-GCM', tagLen: 128 },
-                    'aes-128-gcm': { name: 'AES-GCM', keyLen: 16, ivLen: 12, webCryptoName: 'AES-GCM', tagLen: 128 },
-                    'des-ede3-cbc': { name: '3DES-CBC', keyLen: 24, ivLen: 8, webCryptoName: 'DES-EDE3-CBC' },
-                    'des-cbc': { name: 'DES-CBC', keyLen: 8, ivLen: 8, webCryptoName: 'DES-CBC' },
-                };
-                return params[algoName] || null;
-            }
-
-            // ==================== 加密 ====================
-            async function encryptData(plaintext, password, algoName, hashAlgo) {
-                const params = getAlgorithmParams(algoName);
-                if (!params) throw new Error('不支持的算法: ' + algoName);
-
-                // 生成随机8字节盐
-                const salt = crypto.getRandomValues(new Uint8Array(8)).buffer;
-
-                // 派生密钥和IV
-                const { key, iv } = await evpBytesToKey(password, salt, params.keyLen, params.ivLen, hashAlgo);
-
-                // 导入密钥
-                const cryptoKey = await crypto.subtle.importKey(
+            async function deriveKeyAndIV(password, salt, iterations) {
+                const passwordKey = await crypto.subtle.importKey(
                     'raw',
-                    key,
-                    params.webCryptoName,
+                    typeof password === 'string' ? new TextEncoder().encode(password) : password,
+                    'PBKDF2',
+                    false,
+                    ['deriveBits']
+                );
+
+                const derivedBits = await crypto.subtle.deriveBits({
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: iterations,
+                    hash: 'SHA-256'
+                }, passwordKey, 384);
+
+                const derived = new Uint8Array(derivedBits);
+                const keyBytes = derived.slice(0, 32);
+                const iv = derived.slice(32, 48);
+                return { keyBytes, iv };
+            }
+
+            async function encryptData(plainData, password, iterations) {
+                const salt = generateRandomSalt();
+                const { keyBytes, iv } = await deriveKeyAndIV(password, salt, iterations);
+
+                const aesKey = await crypto.subtle.importKey(
+                    'raw',
+                    keyBytes,
+                    'AES-CBC',
                     false,
                     ['encrypt']
                 );
 
-                // 加密
-                const plaintextBytes = stringToArrayBuffer(plaintext);
-                const encryptParams = {
-                    name: params.webCryptoName,
-                    iv: iv,
-                };
-                if (params.tagLen) {
-                    encryptParams.tagLength = params.tagLen;
-                }
-
                 const ciphertext = await crypto.subtle.encrypt(
-                    encryptParams,
-                    cryptoKey,
-                    plaintextBytes
+                    { name: 'AES-CBC', iv: iv },
+                    aesKey,
+                    plainData
                 );
 
-                // 组装OpenSSL格式: Salted__ + salt + ciphertext
-                const saltedPrefix = new TextEncoder().encode('Salted__').buffer;
-                const opensslData = concatArrayBuffers(saltedPrefix, salt, ciphertext);
-
-                // Base64编码
-                const base64Output = arrayBufferToBase64(opensslData);
-
-                // 返回详细信息
-                return {
-                    base64: base64Output,
-                    saltHex: hexFromBytes(new Uint8Array(salt)),
-                    keyHex: hexFromBytes(new Uint8Array(key)),
-                    ivHex: hexFromBytes(new Uint8Array(iv)),
-                };
+                const header = new TextEncoder().encode('Salted__');
+                const result = new Uint8Array(header.length + salt.length + ciphertext.byteLength);
+                result.set(header, 0);
+                result.set(salt, header.length);
+                result.set(new Uint8Array(ciphertext), header.length + salt.length);
+                return result.buffer;
             }
 
-            // ==================== 解密 ====================
-            async function decryptData(base64Input, password, algoName, hashAlgo) {
-                const params = getAlgorithmParams(algoName);
-                if (!params) throw new Error('不支持的算法: ' + algoName);
+            async function decryptData(encryptedData, password, iterations) {
+                const data = new Uint8Array(encryptedData);
+                const headerStr = 'Salted__';
+                const headerBytes = new TextEncoder().encode(headerStr);
 
-                // Base64解码
-                let opensslData;
-                try {
-                    opensslData = base64ToArrayBuffer(base64Input.trim());
-                } catch (e) {
-                    throw new Error('Base64解码失败，请检查密文格式');
+                if (data.length < headerBytes.length + 8) {
+                    throw new Error('数据太短，不是有效的 OpenSSL 格式（需要 Salted__ 头 + 8 字节 salt）');
                 }
 
-                const dataBytes = new Uint8Array(opensslData);
-                if (dataBytes.length < 16) {
-                    throw new Error('密文数据太短，至少需要16字节（Salted__前缀8字节 + 盐8字节）');
-                }
-
-                // 检查Salted__前缀
-                const prefixBytes = dataBytes.slice(0, 8);
-                const prefixStr = new TextDecoder().decode(prefixBytes);
-                if (prefixStr !== 'Salted__') {
-                    throw new Error(
-                        '未检测到 "Salted__" 前缀。请确认密文是 OpenSSL Salted 格式（Base64编码，以 U2FsdGVkX1 开头）'
-                    );
-                }
-
-                // 提取盐和密文
-                const salt = dataBytes.slice(8, 16).buffer;
-                const ciphertextWithTag = dataBytes.slice(16).buffer;
-
-                if (ciphertextWithTag.byteLength === 0) {
-                    throw new Error('密文部分为空');
-                }
-
-                // 对于GCM，需要分离tag
-                let ciphertext = ciphertextWithTag;
-                if (params.tagLen) {
-                    const tagBytes = params.tagLen / 8;
-                    if (ciphertextWithTag.byteLength < tagBytes) {
-                        throw new Error('GCM密文太短，缺少认证标签');
+                let headerMatch = true;
+                for (let i = 0; i < headerBytes.length; i++) {
+                    if (data[i] !== headerBytes[i]) {
+                        headerMatch = false;
+                        break;
                     }
-                    // Web Crypto API期望密文和tag在一起，所以不需要分离
-                    // ciphertext已经包含了tag
                 }
 
-                // 派生密钥和IV
-                const { key, iv } = await evpBytesToKey(password, salt, params.keyLen, params.ivLen, hashAlgo);
+                if (!headerMatch) {
+                    throw new Error('未找到 Salted__ 头，数据不是有效的 OpenSSL 格式');
+                }
 
-                // 导入密钥
-                const cryptoKey = await crypto.subtle.importKey(
+                const salt = data.slice(headerBytes.length, headerBytes.length + 8);
+                const ciphertext = data.slice(headerBytes.length + 8);
+
+                if (ciphertext.length === 0) {
+                    throw new Error('密文数据为空');
+                }
+
+                const { keyBytes, iv } = await deriveKeyAndIV(password, salt, iterations);
+
+                const aesKey = await crypto.subtle.importKey(
                     'raw',
-                    key,
-                    params.webCryptoName,
+                    keyBytes,
+                    'AES-CBC',
                     false,
                     ['decrypt']
                 );
 
-                // 解密
-                const decryptParams = {
-                    name: params.webCryptoName,
-                    iv: iv,
-                };
-                if (params.tagLen) {
-                    decryptParams.tagLength = params.tagLen;
-                }
+                const plaintext = await crypto.subtle.decrypt(
+                    { name: 'AES-CBC', iv: iv },
+                    aesKey,
+                    ciphertext
+                );
 
-                let plaintextBuffer;
-                try {
-                    plaintextBuffer = await crypto.subtle.decrypt(
-                        decryptParams,
-                        cryptoKey,
-                        ciphertext
-                    );
-                } catch (e) {
-                    if (e.name === 'OperationError') {
-                        throw new Error(
-                            '解密失败。可能原因：密码错误、算法不匹配、密文损坏、或GCM认证标签验证失败。请检查密码和算法选择是否正确。'
-                        );
-                    }
-                    throw new Error('解密失败: ' + (e.message || '未知错误'));
-                }
-
-                const plaintext = arrayBufferToString(plaintextBuffer);
-
-                return {
-                    plaintext: plaintext,
-                    saltHex: hexFromBytes(new Uint8Array(salt)),
-                    keyHex: hexFromBytes(new Uint8Array(key)),
-                    ivHex: hexFromBytes(new Uint8Array(iv)),
-                };
+                return plaintext;
             }
 
-            // ==================== UI逻辑 ====================
-            function setMode(mode) {
-                currentMode = mode;
-                if (mode === 'encrypt') {
-                    tabEncrypt.classList.add('active');
-                    tabDecrypt.classList.remove('active');
-                    plaintextRow.style.display = 'block';
-                    ciphertextRow.style.display = 'none';
-                    btnAction.textContent = '🔒 执行加密';
-                    outputLabel.textContent = '密文输出 Ciphertext (Base64)';
-                    outputArea.placeholder = '加密后的Base64密文将显示在这里...';
-                } else {
-                    tabDecrypt.classList.add('active');
-                    tabEncrypt.classList.remove('active');
-                    plaintextRow.style.display = 'none';
-                    ciphertextRow.style.display = 'block';
-                    btnAction.textContent = '🔓 执行解密';
-                    outputLabel.textContent = '明文输出 Plaintext';
-                    outputArea.placeholder = '解密后的明文将显示在这里...';
-                }
-                hideStatus();
-                hideSaltInfo();
-                // 不清空输出，保留之前的结果便于对比
-            }
-
-            function showStatus(type, message) {
-                statusMsg.className = 'status-msg show ' + type;
-                statusMsg.textContent = message;
-                statusMsg.style.display = 'block';
-            }
-
-            function hideStatus() {
-                statusMsg.className = 'status-msg';
-                statusMsg.style.display = 'none';
-            }
-
-            function showSaltInfo(saltHex, keyHex, ivHex) {
-                saltInfo.innerHTML =
-                    '<span>🧂 盐值 Salt:</span> ' + saltHex +
-                    ' &nbsp;|&nbsp; <span>🔑 密钥 Key:</span> ' + keyHex +
-                    ' &nbsp;|&nbsp; <span>📏 IV:</span> ' + ivHex;
-                saltInfo.classList.add('show');
-            }
-
-            function hideSaltInfo() {
-                saltInfo.classList.remove('show');
-            }
-
-            async function handleAction() {
-                hideStatus();
-                hideSaltInfo();
-                const algoName = algorithmSelect.value;
-                const hashAlgo = kdfSelect.value;
+            async function performAction() {
+                clearStatus();
                 const password = passwordInput.value;
-
                 if (!password) {
-                    showStatus('error', '⚠️ 请输入密码');
-                    passwordInput.focus();
+                    setStatus('请输入密码', 'error');
                     return;
                 }
 
-                if (currentMode === 'encrypt') {
-                    const plaintext = plaintextInput.value;
-                    if (!plaintext) {
-                        showStatus('error', '⚠️ 请输入要加密的明文');
-                        plaintextInput.focus();
-                        return;
-                    }
-                    btnAction.disabled = true;
-                    btnAction.textContent = '⏳ 加密中...';
-                    try {
-                        const result = await encryptData(plaintext, password, algoName, hashAlgo);
-                        outputArea.value = result.base64;
-                        showSaltInfo(result.saltHex, result.keyHex, result.ivHex);
-                        showStatus('success',
-                            '✅ 加密成功！输出为 OpenSSL 兼容格式 (Base64)，可直接用于 openssl enc -d 解密');
-                    } catch (e) {
-                        showStatus('error', '❌ 加密失败: ' + e.message);
-                        outputArea.value = '';
-                    } finally {
-                        btnAction.disabled = false;
-                        btnAction.textContent = '🔒 执行加密';
-                    }
-                } else {
-                    const ciphertext = ciphertextInput.value.trim();
-                    if (!ciphertext) {
-                        showStatus('error', '⚠️ 请输入Base64密文');
-                        ciphertextInput.focus();
-                        return;
-                    }
-                    btnAction.disabled = true;
-                    btnAction.textContent = '⏳ 解密中...';
-                    try {
-                        const result = await decryptData(ciphertext, password, algoName, hashAlgo);
-                        outputArea.value = result.plaintext;
-                        showSaltInfo(result.saltHex, result.keyHex, result.ivHex);
-                        showStatus('success', '✅ 解密成功！');
-                    } catch (e) {
-                        showStatus('error', '❌ 解密失败: ' + e.message);
-                        outputArea.value = '';
-                    } finally {
-                        btnAction.disabled = false;
-                        btnAction.textContent = '🔓 执行解密';
-                    }
-                }
-            }
-
-            async function handleCopy() {
-                const text = outputArea.value;
-                if (!text) {
-                    showStatus('info', 'ℹ️ 没有可复制的内容');
+                const iterations = parseInt(iterInput.value, 10);
+                if (isNaN(iterations) || iterations < 1 || iterations > 99999999) {
+                    setStatus('迭代次数需在 1 到 99999999 之间', 'error');
                     return;
                 }
+
+                const isDecryptMode = decryptCheckbox.checked;
+                const useBase64 = base64Checkbox.checked;
+
+                let inputData;
                 try {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        await navigator.clipboard.writeText(text);
+                    if (isFileMode()) {
+                        if (!currentFileData) {
+                            const arrayBuf = await currentFile.arrayBuffer();
+                            currentFileData = new Uint8Array(arrayBuf);
+                        }
+                        if (isDecryptMode && useBase64) {
+                            const text = arrayBufferToText(currentFileData.buffer);
+                            inputData = base64ToArrayBuffer(text);
+                        } else {
+                            inputData = currentFileData.buffer.slice(0);
+                        }
                     } else {
-                        // 回退方案
-                        outputArea.select();
-                        outputArea.setSelectionRange(0, 99999);
-                        document.execCommand('copy');
-                        outputArea.blur();
-                    }
-                    btnCopy.textContent = '✅ 已复制';
-                    btnCopy.classList.add('copied');
-                    setTimeout(() => {
-                        btnCopy.textContent = '📋 复制';
-                        btnCopy.classList.remove('copied');
-                    }, 1800);
-                    showStatus('success', '📋 已复制到剪贴板');
-                } catch (e) {
-                    showStatus('error', '❌ 复制失败，请手动选择复制');
-                }
-            }
-
-            function handleClear() {
-                plaintextInput.value = '';
-                ciphertextInput.value = '';
-                passwordInput.value = '';
-                outputArea.value = '';
-                hideStatus();
-                hideSaltInfo();
-                if (currentMode === 'encrypt') {
-                    plaintextInput.focus();
-                } else {
-                    ciphertextInput.focus();
-                }
-            }
-
-            function handleSwap() {
-                if (currentMode === 'encrypt') {
-                    // 加密模式：把输出密文交换到解密模式的输入
-                    const outputText = outputArea.value.trim();
-                    if (!outputText) {
-                        showStatus('info', 'ℹ️ 没有输出内容可交换，请先执行加密');
-                        return;
-                    }
-                    setMode('decrypt');
-                    ciphertextInput.value = outputText;
-                    outputArea.value = '';
-                    hideSaltInfo();
-                    showStatus('info', 'ℹ️ 已切换到解密模式，密文已填入。请输入密码进行解密验证');
-                } else {
-                    // 解密模式：把输出明文交换到加密模式的输入
-                    const outputText = outputArea.value;
-                    if (!outputText) {
-                        showStatus('info', 'ℹ️ 没有输出内容可交换，请先执行解密');
-                        return;
-                    }
-                    setMode('encrypt');
-                    plaintextInput.value = outputText;
-                    outputArea.value = '';
-                    hideSaltInfo();
-                    showStatus('info', 'ℹ️ 已切换到加密模式，明文已填入');
-                }
-            }
-
-            function togglePasswordVisibility() {
-                const isPassword = passwordInput.type === 'password';
-                passwordInput.type = isPassword ? 'text' : 'password';
-                togglePwdBtn.textContent = isPassword ? '🙈' : '👁️';
-            }
-
-            // ==================== 事件绑定 ====================
-            modeTabs.addEventListener('click', function(e) {
-                const tab = e.target.closest('.mode-tab');
-                if (!tab) return;
-                const mode = tab.dataset.mode;
-                if (mode && mode !== currentMode) {
-                    setMode(mode);
-                }
-            });
-
-            btnAction.addEventListener('click', handleAction);
-            btnCopy.addEventListener('click', handleCopy);
-            btnClear.addEventListener('click', handleClear);
-            btnSwap.addEventListener('click', handleSwap);
-            togglePwdBtn.addEventListener('click', togglePasswordVisibility);
-
-            // 键盘快捷键: Ctrl+Enter 执行操作
-            document.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAction();
-                }
-            });
-
-            // 检测浏览器是否支持所选算法
-            async function checkAlgorithmSupport(algoName) {
-                const params = getAlgorithmParams(algoName);
-                if (!params) return false;
-                try {
-                    const testKey = await crypto.subtle.generateKey({
-                            name: params.webCryptoName,
-                            length: params.keyLen * 8
-                        },
-                        false,
-                        ['encrypt', 'decrypt']
-                    );
-                    return true;
-                } catch (e) {
-                    return false;
-                }
-            }
-
-            async function updateAlgorithmOptions() {
-                const options = algorithmSelect.options;
-                for (let i = 0; i < options.length; i++) {
-                    const supported = await checkAlgorithmSupport(options[i].value);
-                    if (!supported) {
-                        options[i].disabled = true;
-                        options[i].text += ' (浏览器不支持)';
-                        if (options[i].selected) {
-                            // 选择第一个支持的算法
-                            for (let j = 0; j < options.length; j++) {
-                                if (!options[j].disabled) {
-                                    algorithmSelect.value = options[j].value;
-                                    break;
-                                }
-                            }
+                        const text = inputTextarea.value;
+                        if (!text) {
+                            setStatus('请输入文本或上传文件', 'error');
+                            return;
+                        }
+                        if (isDecryptMode && useBase64) {
+                            inputData = base64ToArrayBuffer(text);
+                        } else if (isDecryptMode && !useBase64) {
+                            setStatus('解密模式下，如果不启用 Base64，请上传二进制文件作为输入', 'error');
+                            return;
+                        } else {
+                            inputData = textToArrayBuffer(text);
                         }
                     }
+                } catch (e) {
+                    setStatus('输入数据处理失败: ' + e.message, 'error');
+                    return;
+                }
+
+                try {
+                    if (isDecryptMode) {
+                        const plainBuf = await decryptData(inputData, password, iterations);
+                        const plainText = arrayBufferToText(plainBuf);
+                        setOutput(plainText, false, 'text/plain');
+                        setStatus('解密成功', 'success');
+                    } else {
+                        const encryptedBuf = await encryptData(inputData, password, iterations);
+                        if (useBase64) {
+                            const b64 = arrayBufferToBase64(encryptedBuf);
+                            setOutput(b64, false, 'text/plain');
+                        } else {
+                            const binaryStr = arrayBufferToText(encryptedBuf);
+                            setOutput(binaryStr, true, 'application/octet-stream');
+                        }
+                        setStatus('加密成功', 'success');
+                    }
+                } catch (e) {
+                    setStatus('操作失败: ' + e.message, 'error');
+                    clearOutput();
                 }
             }
 
-            // ==================== 初始化 ====================
-            function init() {
-                setMode('encrypt');
-                hideStatus();
-                hideSaltInfo();
-                outputArea.value = '';
-                plaintextInput.value = '';
-                ciphertextInput.value = '';
-                passwordInput.value = '';
-                updateAlgorithmOptions().catch(() => {
-                    // 静默处理，不影响使用
-                });
-                // 聚焦到明文输入
-                plaintextInput.focus();
+            function updateHint() {
+                const isDecryptMode = decryptCheckbox.checked;
+                const useBase64 = base64Checkbox.checked;
+                const iterations = parseInt(iterInput.value, 10) || 10000;
+                const iterArg = iterations === 10000 ? '' : ' -iter ' + iterations;
+
+                let cmd;
+                if (isDecryptMode) {
+                    const inFile = useBase64 ? 'plaintext.txt' : 'plaintext.bin';
+                    const outFile = useBase64 ? 'encrypted.txt' : 'encrypted.bin';
+                    const base64Arg = useBase64 ? ' -base64' : '';
+                    cmd = 'openssl enc -aes-256-cbc -pbkdf2' + iterArg + base64Arg + ' -in ' + inFile + ' -out ' + outFile;
+                } else {
+                    const inFile = useBase64 ? 'encrypted.txt' : 'encrypted.bin';
+                    const outFile = 'decrypted.bin';
+                    const base64Arg = useBase64 ? ' -base64' : '';
+                    cmd = 'openssl enc -d -aes-256-cbc -pbkdf2' + iterArg + base64Arg + ' -in ' + inFile + ' -out ' + outFile;
+                }
+                hintBar.textContent = cmd;
             }
 
-            init();
+            function loadFileFromInput(file) {
+                if (!file) return;
+                currentFile = file;
+                currentFileData = null;
+                inputTextarea.value = '';
+                updateInputUI();
+                clearOutput();
+                clearStatus();
+            }
 
-            // ==================== 暴露调试接口 ====================
-            console.log('🔐 OpenSSL 加解密工具已就绪');
-            console.log('  支持算法: AES-256/192/128-CBC, AES-256/128-GCM, 3DES-CBC, DES-CBC');
-            console.log('  KDF: MD5 (传统OpenSSL), SHA-256 (OpenSSL 1.1.0+)');
-            console.log('  快捷键: Ctrl+Enter 执行加解密');
-            console.log('  输出格式: OpenSSL Salted__ 兼容格式 (Base64)');
+            inputTextarea.addEventListener('input', function () {
+                if (!isFileMode()) {
+                    const len = inputTextarea.value.length;
+                    inputCharCount.textContent = len + ' 字符';
+                }
+                clearOutput();
+                clearStatus();
+            });
+
+            fileUploadBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                hiddenFileInput.click();
+            });
+
+            hiddenFileInput.addEventListener('change', function () {
+                if (hiddenFileInput.files && hiddenFileInput.files.length > 0) {
+                    loadFileFromInput(hiddenFileInput.files[0]);
+                }
+            });
+
+            clearInputBtn.addEventListener('click', function () {
+                clearInput();
+            });
+
+            inputWrapper.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                inputWrapper.classList.add('drag-over');
+            });
+
+            inputWrapper.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!inputWrapper.contains(e.relatedTarget)) {
+                    inputWrapper.classList.remove('drag-over');
+                }
+            });
+
+            inputWrapper.addEventListener('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                inputWrapper.classList.remove('drag-over');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    loadFileFromInput(e.dataTransfer.files[0]);
+                }
+            });
+
+            document.addEventListener('dragover', function (e) {
+                if (inputWrapper.contains(e.target)) {
+                    return;
+                }
+                e.preventDefault();
+            });
+
+            document.addEventListener('drop', function (e) {
+                if (inputWrapper.contains(e.target)) {
+                    return;
+                }
+                e.preventDefault();
+            });
+
+            decryptCheckbox.addEventListener('change', function () {
+                actionBtn.textContent = decryptCheckbox.checked ? '解密' : '加密';
+                clearOutput();
+                clearStatus();
+                updateHint();
+            });
+
+            base64Checkbox.addEventListener('change', function () {
+                clearOutput();
+                clearStatus();
+                updateHint();
+            });
+
+            iterInput.addEventListener('input', function () {
+                updateHint();
+            });
+
+            iterInput.addEventListener('change', function () {
+                let val = parseInt(iterInput.value, 10);
+                if (isNaN(val) || val < 1) {
+                    val = 10000;
+                }
+                if (val > 99999999) {
+                    val = 99999999;
+                }
+                iterInput.value = val;
+                updateHint();
+            });
+
+            passwordInput.addEventListener('input', function () {
+                clearOutput();
+                clearStatus();
+            });
+
+            actionBtn.addEventListener('click', function () {
+                performAction();
+            });
+
+            loadOutputBtn.addEventListener('click', function () {
+                if (pendingOutputText !== null) {
+                    outputTextarea.value = pendingOutputText;
+                    outputCharCount.textContent = pendingOutputText.length + ' 字符';
+                }
+                hideOutputWarning();
+                setStatus('已加载输出内容', 'success');
+            });
+
+            downloadBtn.addEventListener('click', function () {
+                if (lastOperationOutput === null && (!pendingOutputText && outputIsHiddenByWarning)) {
+                    setStatus('没有可下载的输出内容', 'error');
+                    return;
+                }
+                const content = outputIsHiddenByWarning ? pendingOutputText : lastOperationOutput;
+                if (content === null || content === undefined) {
+                    setStatus('没有可下载的输出内容', 'error');
+                    return;
+                }
+                const isDecryptMode = decryptCheckbox.checked;
+                const useBase64 = base64Checkbox.checked;
+                let filename;
+                let blob;
+
+                if (isDecryptMode) {
+                    filename = 'decrypted.bin';
+                    blob = new Blob([new TextEncoder().encode(content)], { type: 'application/octet-stream' });
+                } else {
+                    if (useBase64) {
+                        filename = 'encrypted.txt';
+                        blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    } else {
+                        filename = 'encrypted.bin';
+                        const encoder = new TextEncoder();
+                        const bytes = encoder.encode(content);
+                        blob = new Blob([bytes], { type: 'application/octet-stream' });
+                    }
+                }
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                setStatus('文件已下载: ' + filename, 'success');
+            });
+
+            copyBtn.addEventListener('click', async function () {
+                const content = outputIsHiddenByWarning ? pendingOutputText : lastOperationOutput;
+                if (content === null || content === undefined) {
+                    setStatus('没有可复制的内容', 'error');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(content);
+                    setStatus('已复制到剪贴板 (' + content.length + ' 字符)', 'success');
+                } catch (e) {
+                    outputTextarea.select();
+                    outputTextarea.setSelectionRange(0, content.length);
+                    try {
+                        document.execCommand('copy');
+                        setStatus('已复制到剪贴板', 'success');
+                    } catch (e2) {
+                        setStatus('复制失败，请手动选择文本复制', 'error');
+                    }
+                }
+            });
+
+            updateInputUI();
+            updateHint();
+            actionBtn.textContent = '加密';
+            outputCharCount.textContent = '0 字符';
         })();
     </script>
 </body>
