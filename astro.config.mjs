@@ -3,7 +3,7 @@ import { defineConfig,passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
-import rehypeMathjax from 'rehype-mathjax';
+import rehypeKatex from 'rehype-katex';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -66,14 +66,7 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
-      [rehypeMathjax, {
-        chtml: {
-          fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2',
-        },
-        tex: {
-          tags: 'ams',  // 启用 \tag{} 公式编号
-        },
-      }],
+      rehypeKatex
     ],
   },
 });
