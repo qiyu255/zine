@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 语言约定
 
-文档和代码中的注释使用中文。
+回答、文档和代码中的注释使用中文。
 
 ## 项目概览
 

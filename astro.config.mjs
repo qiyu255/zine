@@ -2,6 +2,8 @@
 import { defineConfig,passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
+import remarkMath from 'remark-math';
+import rehypeMathjax from 'rehype-mathjax';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -23,37 +25,55 @@ if(isProd){
 // https://astro.build/config
 export default defineConfig({
   ...devConfig,
-	server: {
-		host: '0.0.0.0',
-		port: 3000,
-	},
-	integrations: [
-		starlight({
-			title: 'My Docs',
+  server: {
+    host: '0.0.0.0',
+    port: 3000,
+  },
+  integrations: [
+    starlight({
+      title: 'My Docs',
       locales: {
         root: {
           label: '简体中文',
           lang: 'zh-CN',
         }
       },
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
-			sidebar: [
-				{
-					label: '指南',
-					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
-					],
-				},
-				{
-					label: '参考',
-					items: [{ autogenerate: { directory: 'reference' } }],
-				},
-			],
-			customCss: ['./src/styles/global.css'],
-		}),
-	],
-	vite: {
-		plugins: [tailwindcss()],
-	},
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+      sidebar: [
+        {
+          label: '笔记',
+          items: [{ autogenerate: { directory: 'note' } }],
+
+        },
+        {
+          label: '指南',
+          items: [
+            // Each item here is one entry in the navigation menu.
+            { label: 'Example Guide', slug: 'guides/example' },
+          ],
+        },
+        {
+          label: '参考',
+          items: [{ autogenerate: { directory: 'reference' } }],
+        },
+      ],
+      customCss: ['./src/styles/global.css'],
+    }),
+  ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
+  markdown: {
+    remarkPlugins: [remarkMath],
+    rehypePlugins: [
+      [rehypeMathjax, {
+        chtml: {
+          fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2',
+        },
+        tex: {
+          tags: 'ams',  // 启用 \tag{} 公式编号
+        },
+      }],
+    ],
+  },
 });
