@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig,passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import tailwindcss from '@tailwindcss/vite';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
@@ -49,6 +50,10 @@ export default defineConfig({
 					items: [{ autogenerate: { directory: 'reference' } }],
 				},
 			],
+			customCss: ['./src/styles/global.css'],
 		}),
 	],
+	vite: {
+		plugins: [tailwindcss()],
+	},
 });
