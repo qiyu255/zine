@@ -46,6 +46,11 @@ export default defineConfig({
 
         },
         {
+          label: '笔记',
+          items: [{ autogenerate: { directory: 'note' } }],
+
+        },
+        {
           label: '指南',
           items: [
             // Each item here is one entry in the navigation menu.
