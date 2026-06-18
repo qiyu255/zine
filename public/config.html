@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-hans" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#282828" id="theme-color-meta">
+    <title>配置文件格式转换</title>
+    <meta name="description" content="支持 JSON、YAML、TOML、XML 格式互转的配置文件转换工具">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme-preference');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let resolvedTheme;
+            let preference;
+
+            if (saved === 'dark' || saved === 'light' || saved === 'auto') {
+                preference = saved;
+            } else {
+                preference = 'auto';
+            }
+
+            if (preference === 'auto') {
+                resolvedTheme = systemDark ? 'dark' : 'light';
+            } else {
+                resolvedTheme = preference;
+            }
+
+            document.documentElement.setAttribute('data-theme', resolvedTheme);
+            document.documentElement.setAttribute('data-theme-preference', preference);
+
+            const meta = document.getElementById('theme-color-meta');
+            if (meta) {
+                meta.setAttribute('content', resolvedTheme === 'dark' ? '#282828' : '#fbf1c7');
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                "Helvetica Neue",
+                "Noto Sans",
+                "Liberation Sans",
+                "Apple Color Emoji",
+                "Segoe UI Emoji",
+                "Segoe UI Symbol",
+                "Noto Color Emoji",
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "WenQuanYi Micro Hei",
+                Arial,
+                sans-serif;
+
+            --font-family-monospace:
+                "JetBrains Mono",
+                "Liberation Mono",
+                "SF Mono",
+                Menlo,
+                Monaco,
+                Consolas,
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                monospace;
+
+            --transition-time: 0.2s;
+            --transition-time-slow: 0.3s;
+            --radius-sm: 2px;
+            --radius-md: 4px;
+            --breakpoint-sm: 576px;
+            --breakpoint-md: 768px;
+            --breakpoint-lg: 992px;
+            --breakpoint-xl: 1200px;
+
+            --color-primary: var(--green);
+            --color-secondary: var(--yellow);
+            --color-accent: var(--blue);
+            --color-success: var(--green);
+            --color-warning: var(--orange);
+            --color-error: var(--red);
+            --color-info: var(--blue);
+            --text-primary: var(--fg1);
+            --text-secondary: var(--fg-3);
+            --text-muted: var(--fg-4);
+            --text-inverse: var(--bg1);
+            --bg-body: var(--bg);
+            --bg-surface: var(--bg-s);
+            --bg-overlay: #0000007F;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.125rem;
+            --font-size-lg: 1.25rem;
+            --font-size-xl: 1.5rem;
+            font-size: 16px;
+        }
+
+        [data-theme="dark"] {
+            color-scheme: dark;
+            --bg_h: #1d2021;
+            --bg: #282828;
+            --bg_s: #32302f;
+            --bg1: #3c3836;
+            --bg2: #504945;
+            --bg3: #665c54;
+            --bg4: #7c6f64;
+            --fg: #fbf1c7;
+            --fg1: #ebdbb2;
+            --fg2: #d5c4a1;
+            --fg3: #bdae93;
+            --fg4: #a89984;
+            --red: #fb4934;
+            --green: #b8bb26;
+            --yellow: #fabd2f;
+            --blue: #83a598;
+            --purple: #d3869b;
+            --aqua: #8ec07c;
+            --gray: #928374;
+            --orange: #fe8019;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458588;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --gray-dim: #a89984;
+            --orange-dim: #d65d0e;
+        }
+
+        [data-theme="light"] {
+            color-scheme: light;
+            --bg_h: #f9f5d7;
+            --bg: #fbf1c7;
+            --bg_s: #f2e5bc;
+            --bg1: #ebdbb2;
+            --bg2: #d5c4a1;
+            --bg3: #bdae93;
+            --bg4: #a89984;
+            --fg: #282828;
+            --fg1: #3c3836;
+            --fg2: #504945;
+            --fg3: #665c54;
+            --fg4: #7c6f64;
+            --red: #9d0006;
+            --green: #79740e;
+            --yellow: #b57614;
+            --blue: #076678;
+            --purple: #8f3f71;
+            --aqua: #427b58;
+            --orange: #af3a03;
+            --gray: #928374;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458598;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --orange-dim: #d65d0e;
+            --gray-dim: #7c6f64;
+        }
+
+        a {
+            color: var(--blue);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--blue-dim);
+        }
+
+        a:visited {
+            color: var(--blue);
+        }
+
+        a:active {
+            color: var(--blue);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--bg2);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .header-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-subtitle {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-left: 0.5rem;
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-md);
+            transition: color var(--transition-time) ease, background-color var(--transition-time) ease;
+        }
+
+        .theme-toggle:hover {
+            color: var(--text-primary);
+            background-color: var(--bg1);
+        }
+
+        /* ===== Main Layout ===== */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* ===== Control Bar ===== */
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .control-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* ===== Select ===== */
+        .select {
+            appearance: none;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 1.75rem 0.375rem 0.5rem;
+            cursor: pointer;
+            transition: border-color var(--transition-time) ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23bdae93' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        /* ===== Buttons ===== */
+        .btn {
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: color var(--transition-time) ease, background-color var(--transition-time) ease, border-color var(--transition-time) ease;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--color-primary);
+        }
+
+        .btn-text:hover {
+            color: var(--green-dim);
+        }
+
+        .btn-outline {
+            background: none;
+            border: 1px solid var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(184, 187, 38, 0.1);
+        }
+
+        .btn-filled {
+            background-color: var(--color-primary);
+            color: var(--text-inverse);
+            border: 1px solid var(--color-primary);
+        }
+
+        .btn-filled:hover {
+            background-color: var(--green-dim);
+            border-color: var(--green-dim);
+        }
+
+        .btn-danger {
+            background: none;
+            border: 1px solid var(--color-error);
+            color: var(--color-error);
+        }
+
+        .btn-danger:hover {
+            background-color: rgba(251, 73, 52, 0.1);
+        }
+
+        /* ===== Swap Button ===== */
+        .swap-btn {
+            background: none;
+            border: 1px solid var(--bg3);
+            color: var(--text-secondary);
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 0.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: color var(--transition-time) ease, border-color var(--transition-time) ease, background-color var(--transition-time) ease;
+        }
+
+        .swap-btn:hover {
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+            background-color: rgba(184, 187, 38, 0.05);
+        }
+
+        /* ===== Editor Area ===== */
+        .editor-area {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 0.5rem;
+            min-height: 60vh;
+        }
+
+        @media (max-width: 768px) {
+            .editor-area {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto 1fr;
+            }
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--bg2);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background-color: var(--bg-surface);
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.375rem 0.5rem;
+            background-color: var(--bg1);
+            border-bottom: 1px solid var(--bg2);
+        }
+
+        .editor-header-title {
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .editor-header-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            min-height: 300px;
+            width: 100%;
+            resize: none;
+            border: none;
+            outline: none;
+            padding: 0.5rem;
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-surface);
+            tab-size: 2;
+        }
+
+        .editor-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .editor-textarea:focus {
+            outline: none;
+        }
+
+        /* ===== Center Actions ===== */
+        .center-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .center-actions {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* ===== Error Display ===== */
+        .error-bar {
+            display: none;
+            padding: 0.5rem 0.75rem;
+            background-color: rgba(251, 73, 52, 0.1);
+            border: 1px solid var(--color-error);
+            border-radius: var(--radius-md);
+            color: var(--color-error);
+            font-size: var(--font-size-sm);
+            word-break: break-word;
+        }
+
+        .error-bar.visible {
+            display: block;
+        }
+
+        /* ===== Toast ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .toast {
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            color: var(--text-inverse);
+            background-color: var(--bg3);
+            border: 1px solid var(--bg4);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity var(--transition-time) ease, transform var(--transition-time) ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background-color: var(--green-dim);
+            border-color: var(--green);
+            color: var(--fg);
+        }
+
+        .toast-error {
+            background-color: var(--red-dim);
+            border-color: var(--red);
+            color: var(--fg);
+        }
+
+        /* ===== Sample Data Panel ===== */
+        .sample-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .sample-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        /* ===== Checkbox ===== */
+        .checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-wrap input[type="checkbox"] {
+            appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg-surface);
+            cursor: pointer;
+            position: relative;
+            transition: border-color var(--transition-time) ease;
+        }
+
+        .checkbox-wrap input[type="checkbox"]:checked {
+            border-color: var(--color-primary);
+            background-color: var(--color-primary);
+        }
+
+        .checkbox-wrap input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 0.25rem;
+            top: 0.05rem;
+            width: 0.3rem;
+            height: 0.55rem;
+            border: solid var(--text-inverse);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-wrap input[type="checkbox"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <span class="header-title">配置文件格式转换</span>
+            <span class="header-subtitle">JSON / YAML / TOML / XML</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">
+            <span id="themeLabel">自动</span>
+        </button>
+    </header>
+
+    <main class="main">
+        <!-- Control Bar -->
+        <div class="control-bar">
+            <div class="control-group">
+                <span class="control-label">输入格式</span>
+                <select class="select" id="inputFormat">
+                    <option value="json">JSON</option>
+                    <option value="yaml">YAML</option>
+                    <option value="toml">TOML</option>
+                    <option value="xml">XML</option>
+                </select>
+            </div>
+
+            <button class="swap-btn" id="swapBtn" title="交换输入输出">交换</button>
+
+            <div class="control-group">
+                <span class="control-label">输出格式</span>
+                <select class="select" id="outputFormat">
+                    <option value="yaml">YAML</option>
+                    <option value="json">JSON</option>
+                    <option value="toml">TOML</option>
+                    <option value="xml">XML</option>
+                </select>
+            </div>
+
+            <div style="flex:1"></div>
+
+            <div class="control-group">
+                <label class="checkbox-wrap">
+                    <input type="checkbox" id="prettyPrint" checked>
+                    <span>美化输出</span>
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-wrap">
+                    <input type="checkbox" id="sortKeys">
+                    <span>排序键</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Error Bar -->
+        <div class="error-bar" id="errorBar"></div>
+
+        <!-- Editor Area -->
+        <div class="editor-area">
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <span class="editor-header-title" id="inputTitle">输入 (JSON)</span>
+                    <div class="editor-header-actions">
+                        <button class="btn btn-text" id="clearInput">清空</button>
+                        <button class="btn btn-text" id="pasteInput">粘贴</button>
+                    </div>
+                </div>
+                <textarea class="editor-textarea" id="inputArea" placeholder="在此粘贴或输入配置内容..."></textarea>
+            </div>
+
+            <div class="center-actions">
+                <button class="btn btn-filled" id="convertBtn">转换</button>
+                <button class="btn btn-outline" id="copyOutput">复制结果</button>
+            </div>
+
+            <div class="editor-panel">
+                <div class="editor-header">
+                    <span class="editor-header-title" id="outputTitle">输出 (YAML)</span>
+                    <div class="editor-header-actions">
+                        <button class="btn btn-text" id="downloadOutput">下载</button>
+                        <button class="btn btn-text" id="clearOutput">清空</button>
+                    </div>
+                </div>
+                <textarea class="editor-textarea" id="outputArea" placeholder="转换结果将显示在这里..." readonly></textarea>
+            </div>
+        </div>
+
+        <!-- Sample Bar -->
+        <div class="sample-bar">
+            <span class="sample-label">示例数据:</span>
+            <button class="btn btn-text" data-sample="basic">基础</button>
+            <button class="btn btn-text" data-sample="nested">嵌套</button>
+            <button class="btn btn-text" data-sample="array">数组</button>
+            <button class="btn btn-text" data-sample="mixed">混合</button>
+        </div>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==================== Theme System ====================
+        (function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeLabel = document.getElementById('themeLabel');
+            const meta = document.getElementById('theme-color-meta');
+
+            const labels = { auto: '自动', dark: '深色', light: '浅色' };
+            const cycle = ['auto', 'dark', 'light'];
+
+            function applyTheme(preference) {
+                const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const resolved = preference === 'auto' ? (systemDark ? 'dark' : 'light') : preference;
+                document.documentElement.setAttribute('data-theme', resolved);
+                document.documentElement.setAttribute('data-theme-preference', preference);
+                if (meta) meta.setAttribute('content', resolved === 'dark' ? '#282828' : '#fbf1c7');
+                themeLabel.textContent = labels[preference];
+                localStorage.setItem('theme-preference', preference);
+            }
+
+            themeToggle.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme-preference') || 'auto';
+                const next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+                applyTheme(next);
+            });
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                const pref = document.documentElement.getAttribute('data-theme-preference') || 'auto';
+                if (pref === 'auto') applyTheme('auto');
+            });
+        })();
+
+        // ==================== Toast ====================
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast' + (type ? ' toast-' + type : '');
+            toast.textContent = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        // ==================== Error Bar ====================
+        function showError(msg) {
+            const bar = document.getElementById('errorBar');
+            if (msg) {
+                bar.textContent = msg;
+                bar.classList.add('visible');
+            } else {
+                bar.classList.remove('visible');
+                bar.textContent = '';
+            }
+        }
+
+        // ==================== YAML Parser / Stringifier ====================
+        const YAML = (function() {
+            function parse(text) {
+                const lines = text.split('\n');
+                const root = {};
+                const stack = [{ obj: root, indent: -1, key: null, isArray: false }];
+
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i];
+                    if (!line.trim() || line.trim().startsWith('#')) continue;
+
+                    const indent = line.length - line.trimStart().length;
+                    const trimmed = line.trim();
+
+                    // Array item
+                    if (trimmed.startsWith('- ')) {
+                        const val = trimmed.slice(2).trim();
+                        let parent = stack[stack.length - 1];
+                        while (parent.indent >= indent && stack.length > 1) {
+                            stack.pop();
+                            parent = stack[stack.length - 1];
+                        }
+                        if (!parent.isArray) {
+                            // Need to convert current key's value to array
+                            // This is a simplified parser; for robustness we handle common cases
+                        }
+                        // Simplified: treat as object with numeric keys for now
+                        const arr = parent.obj;
+                        const idx = Array.isArray(arr) ? arr.length : Object.keys(arr).length;
+                        const parsedVal = parseValue(val);
+                        if (Array.isArray(arr)) {
+                            arr.push(parsedVal);
+                        } else {
+                            arr[idx] = parsedVal;
+                        }
+                        if (typeof parsedVal === 'object' && parsedVal !== null && !(parsedVal instanceof Date)) {
+                            const newObj = Array.isArray(parsedVal) ? parsedVal : {};
+                            stack.push({ obj: newObj, indent: indent, key: idx, isArray: Array.isArray(parsedVal) });
+                        }
+                        continue;
+                    }
+
+                    const colonIdx = trimmed.indexOf(':');
+                    if (colonIdx === -1) continue;
+
+                    const key = trimmed.slice(0, colonIdx).trim();
+                    let valStr = trimmed.slice(colonIdx + 1).trim();
+
+                    let parent = stack[stack.length - 1];
+                    while (parent.indent >= indent && stack.length > 1) {
+                        stack.pop();
+                        parent = stack[stack.length - 1];
+                    }
+
+                    const parsedVal = parseValue(valStr);
+                    if (Array.isArray(parent.obj)) {
+                        parent.obj.push({ [key]: parsedVal });
+                    } else {
+                        parent.obj[key] = parsedVal;
+                    }
+
+                    if (valStr === '' || (typeof parsedVal === 'object' && parsedVal !== null && !(parsedVal instanceof Date))) {
+                        const newObj = valStr === '' ? {} : parsedVal;
+                        stack.push({ obj: newObj, indent: indent, key: key, isArray: Array.isArray(newObj) });
+                    }
+                }
+                return root;
+            }
+
+            function parseValue(str) {
+                str = str.trim();
+                if (str === '' || str === 'null' || str === '~') return null;
+                if (str === 'true' || str === 'True' || str === 'TRUE') return true;
+                if (str === 'false' || str === 'False' || str === 'FALSE') return false;
+                if (/^-?\d+$/.test(str)) return parseInt(str, 10);
+                if (/^-?\d+\.\d+$/.test(str)) return parseFloat(str);
+                if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+                    return str.slice(1, -1);
+                }
+                if (str.startsWith('[') && str.endsWith(']')) {
+                    try { return JSON.parse(str); } catch(e) { return str; }
+                }
+                if (str.startsWith('{') && str.endsWith('}')) {
+                    try { return JSON.parse(str); } catch(e) { return str; }
+                }
+                return str;
+            }
+
+            function stringify(obj, indent) {
+                indent = indent || 0;
+                const spaces = '  '.repeat(indent);
+                let result = '';
+
+                if (obj === null) return 'null';
+                if (obj === undefined) return '';
+                if (typeof obj === 'boolean') return obj ? 'true' : 'false';
+                if (typeof obj === 'number') return String(obj);
+                if (typeof obj === 'string') {
+                    if (/[\n\r\t:#\[\]{}|>&*!?'"\s]/.test(obj) || obj === '' || obj === 'true' || obj === 'false' || obj === 'null' || /^-?\d+(\.\d+)?$/.test(obj)) {
+                        return '"' + obj.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t') + '"';
+                    }
+                    return obj;
+                }
+                if (Array.isArray(obj)) {
+                    if (obj.length === 0) return '[]';
+                    for (let i = 0; i < obj.length; i++) {
+                        const val = obj[i];
+                        if (typeof val === 'object' && val !== null) {
+                            const nested = stringify(val, indent + 1);
+                            const lines = nested.split('\n');
+                            result += spaces + '- ' + lines[0] + '\n';
+                            for (let j = 1; j < lines.length; j++) {
+                                if (lines[j]) result += spaces + '  ' + lines[j] + '\n';
+                            }
+                        } else {
+                            result += spaces + '- ' + stringify(val, 0) + '\n';
+                        }
+                    }
+                    return result.trimEnd();
+                }
+                if (typeof obj === 'object') {
+                    const keys = Object.keys(obj);
+                    if (keys.length === 0) return '{}';
+                    for (let i = 0; i < keys.length; i++) {
+                        const key = keys[i];
+                        const val = obj[key];
+                        const safeKey = /[\s:#\[\]{}|>&*!?'"\s]/.test(key) ? '"' + key + '"' : key;
+                        if (typeof val === 'object' && val !== null) {
+                            const nested = stringify(val, indent + 1);
+                            const lines = nested.split('\n');
+                            result += spaces + safeKey + ':' + (lines[0] ? ' ' + lines[0] : '') + '\n';
+                            for (let j = 1; j < lines.length; j++) {
+                                if (lines[j]) result += spaces + '  ' + lines[j] + '\n';
+                            }
+                        } else {
+                            result += spaces + safeKey + ': ' + stringify(val, 0) + '\n';
+                        }
+                    }
+                    return result.trimEnd();
+                }
+                return String(obj);
+            }
+
+            return { parse: parse, stringify: stringify };
+        })();
+
+        // ==================== TOML Parser / Stringifier ====================
+        const TOML = (function() {
+            function parse(text) {
+                const lines = text.split('\n');
+                const root = {};
+                let current = root;
+                const tableStack = [root];
+
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    if (!line || line.startsWith('#')) continue;
+
+                    // Table
+                    if (line.startsWith('[') && line.endsWith(']')) {
+                        const path = line.slice(1, -1).split('.');
+                        current = root;
+                        for (let j = 0; j < path.length; j++) {
+                            const key = path[j].trim();
+                            if (!(key in current)) current[key] = {};
+                            current = current[key];
+                        }
+                        continue;
+                    }
+
+                    // Array of tables
+                    if (line.startsWith('[[') && line.endsWith(']]')) {
+                        const path = line.slice(2, -2).split('.');
+                        let parent = root;
+                        for (let j = 0; j < path.length - 1; j++) {
+                            const key = path[j].trim();
+                            if (!(key in parent)) parent[key] = {};
+                            parent = parent[key];
+                        }
+                        const lastKey = path[path.length - 1].trim();
+                        if (!Array.isArray(parent[lastKey])) parent[lastKey] = [];
+                        const newObj = {};
+                        parent[lastKey].push(newObj);
+                        current = newObj;
+                        continue;
+                    }
+
+                    const eqIdx = line.indexOf('=');
+                    if (eqIdx === -1) continue;
+
+                    const key = line.slice(0, eqIdx).trim();
+                    let valStr = line.slice(eqIdx + 1).trim();
+                    current[key] = parseValue(valStr);
+                }
+                return root;
+            }
+
+            function parseValue(str) {
+                str = str.trim();
+                if (str === '' || str === 'null') return null;
+                if (str === 'true') return true;
+                if (str === 'false') return false;
+                if (/^-?\d+$/.test(str)) return parseInt(str, 10);
+                if (/^-?\d+\.\d+$/.test(str)) return parseFloat(str);
+                if (str.startsWith('"""') && str.endsWith('"""')) return str.slice(3, -3);
+                if (str.startsWith('"') && str.endsWith('"')) return str.slice(1, -1);
+                if (str.startsWith("'") && str.endsWith("'")) return str.slice(1, -1);
+                if (str.startsWith('[') && str.endsWith(']')) {
+                    try { return JSON.parse(str); } catch(e) { return str; }
+                }
+                if (str.startsWith('{') && str.endsWith('}')) {
+                    try { return JSON.parse(str); } catch(e) { return str; }
+                }
+                return str;
+            }
+
+            function stringify(obj, sortKeys) {
+                return stringifyObj(obj, '', sortKeys);
+            }
+
+            function stringifyObj(obj, prefix, sortKeys) {
+                let result = '';
+                let keys = Object.keys(obj);
+                if (sortKeys) keys.sort();
+
+                // First pass: simple values
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    const val = obj[key];
+                    const fullKey = prefix ? prefix + '.' + key : key;
+                    if (typeof val !== 'object' || val === null || Array.isArray(val)) {
+                        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
+                            // Array of tables
+                            for (let j = 0; j < val.length; j++) {
+                                result += '[[" + fullKey + "]]\n';
+                                result += stringifyObj(val[j], '', sortKeys);
+                                result += '\n';
+                            }
+                        } else {
+                            result += key + ' = ' + stringifyValue(val) + '\n';
+                        }
+                    }
+                }
+
+                // Second pass: objects (tables)
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    const val = obj[key];
+                    const fullKey = prefix ? prefix + '.' + key : key;
+                    if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+                        result += '\n[' + fullKey + ']\n';
+                        result += stringifyObj(val, '', sortKeys);
+                    }
+                }
+
+                return result.trimEnd();
+            }
+
+            function stringifyValue(val) {
+                if (val === null) return '""';
+                if (val === undefined) return '""';
+                if (typeof val === 'boolean') return val ? 'true' : 'false';
+                if (typeof val === 'number') return String(val);
+                if (typeof val === 'string') {
+                    if (/[\n\r\t"]/.test(val)) {
+                        return '"""' + val + '"""';
+                    }
+                    return '"' + val.replace(/"/g, '\\"') + '"';
+                }
+                if (Array.isArray(val)) {
+                    const items = val.map(stringifyValue);
+                    return '[' + items.join(', ') + ']';
+                }
+                if (typeof val === 'object') {
+                    const pairs = Object.keys(val).map(k => k + ' = ' + stringifyValue(val[k]));
+                    return '{ ' + pairs.join(', ') + ' }';
+                }
+                return '"' + String(val) + '"';
+            }
+
+            return { parse: parse, stringify: stringify };
+        })();
+
+        // ==================== XML Parser / Stringifier ====================
+        const XML = (function() {
+            function parse(text) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'application/xml');
+                const errorNode = doc.querySelector('parsererror');
+                if (errorNode) throw new Error('XML 解析错误');
+                return xmlToObj(doc.documentElement);
+            }
+
+            function xmlToObj(node) {
+                const obj = {};
+
+                // Attributes
+                if (node.attributes && node.attributes.length > 0) {
+                    obj['@attributes'] = {};
+                    for (let i = 0; i < node.attributes.length; i++) {
+                        const attr = node.attributes[i];
+                        obj['@attributes'][attr.name] = attr.value;
+                    }
+                }
+
+                // Child nodes
+                if (node.childNodes && node.childNodes.length > 0) {
+                    let hasElementChildren = false;
+                    let textContent = '';
+
+                    for (let i = 0; i < node.childNodes.length; i++) {
+                        const child = node.childNodes[i];
+                        if (child.nodeType === Node.ELEMENT_NODE) {
+                            hasElementChildren = true;
+                            const childName = child.nodeName;
+                            const childObj = xmlToObj(child);
+
+                            if (obj[childName] === undefined) {
+                                obj[childName] = childObj;
+                            } else if (Array.isArray(obj[childName])) {
+                                obj[childName].push(childObj);
+                            } else {
+                                obj[childName] = [obj[childName], childObj];
+                            }
+                        } else if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.CDATA_SECTION_NODE) {
+                            textContent += child.nodeValue;
+                        }
+                    }
+
+                    textContent = textContent.trim();
+                    if (!hasElementChildren && textContent) {
+                        if (Object.keys(obj).length === 0) {
+                            return parseTextValue(textContent);
+                        } else {
+                            obj['#text'] = textContent;
+                        }
+                    }
+                }
+
+                if (Object.keys(obj).length === 0) return '';
+                return obj;
+            }
+
+            function parseTextValue(str) {
+                if (str === 'true') return true;
+                if (str === 'false') return false;
+                if (str === 'null') return null;
+                if (/^-?\d+$/.test(str)) return parseInt(str, 10);
+                if (/^-?\d+\.\d+$/.test(str)) return parseFloat(str);
+                return str;
+            }
+
+            function stringify(obj, rootName, sortKeys) {
+                rootName = rootName || 'root';
+                let result = '<?xml version="1.0" encoding="UTF-8"?>\n';
+                result += objToXml(obj, rootName, 0, sortKeys);
+                return result;
+            }
+
+            function objToXml(obj, name, indent, sortKeys) {
+                const spaces = '  '.repeat(indent);
+                let result = '';
+
+                if (obj === null || obj === undefined) {
+                    return spaces + '<' + name + ' />\n';
+                }
+
+                if (typeof obj !== 'object') {
+                    const text = escapeXml(String(obj));
+                    return spaces + '<' + name + '>' + text + '</' + name + '>\n';
+                }
+
+                if (Array.isArray(obj)) {
+                    for (let i = 0; i < obj.length; i++) {
+                        result += objToXml(obj[i], name, indent, sortKeys);
+                    }
+                    return result;
+                }
+
+                let attrs = '';
+                let keys = Object.keys(obj);
+                if (sortKeys) keys.sort();
+                let textContent = '';
+                let children = '';
+
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    const val = obj[key];
+                    if (key === '@attributes') {
+                        const attrKeys = Object.keys(val);
+                        if (sortKeys) attrKeys.sort();
+                        for (let j = 0; j < attrKeys.length; j++) {
+                            attrs += ' ' + attrKeys[j] + '="' + escapeXml(String(val[attrKeys[j]])) + '"';
+                        }
+                    } else if (key === '#text') {
+                        textContent = escapeXml(String(val));
+                    } else {
+                        if (Array.isArray(val)) {
+                            for (let j = 0; j < val.length; j++) {
+                                children += objToXml(val[j], key, indent + 1, sortKeys);
+                            }
+                        } else {
+                            children += objToXml(val, key, indent + 1, sortKeys);
+                        }
+                    }
+                }
+
+                if (!children && !textContent) {
+                    result += spaces + '<' + name + attrs + ' />\n';
+                } else if (!children && textContent) {
+                    result += spaces + '<' + name + attrs + '>' + textContent + '</' + name + '>\n';
+                } else {
+                    result += spaces + '<' + name + attrs + '>\n';
+                    if (textContent) result += spaces + '  ' + textContent + '\n';
+                    result += children;
+                    result += spaces + '</' + name + '>\n';
+                }
+
+                return result;
+            }
+
+            function escapeXml(str) {
+                return str.replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&apos;');
+            }
+
+            return { parse: parse, stringify: stringify };
+        })();
+
+        // ==================== Conversion Logic ====================
+        function parseInput(text, format) {
+            text = text.trim();
+            if (!text) throw new Error('输入内容为空');
+
+            switch (format) {
+                case 'json':
+                    return JSON.parse(text);
+                case 'yaml':
+                    return YAML.parse(text);
+                case 'toml':
+                    return TOML.parse(text);
+                case 'xml':
+                    return XML.parse(text);
+                default:
+                    throw new Error('不支持的输入格式');
+            }
+        }
+
+        function stringifyOutput(data, format, pretty, sortKeys) {
+            switch (format) {
+                case 'json':
+                    return pretty ? JSON.stringify(data, sortKeys ? Object.keys(data).sort() : null, 2) : JSON.stringify(data);
+                case 'yaml':
+                    return YAML.stringify(data);
+                case 'toml':
+                    return TOML.stringify(data, sortKeys);
+                case 'xml':
+                    return XML.stringify(data, 'root', sortKeys);
+                default:
+                    throw new Error('不支持的输出格式');
+            }
+        }
+
+        // ==================== UI Interactions ====================
+        const inputFormat = document.getElementById('inputFormat');
+        const outputFormat = document.getElementById('outputFormat');
+        const inputArea = document.getElementById('inputArea');
+        const outputArea = document.getElementById('outputArea');
+        const inputTitle = document.getElementById('inputTitle');
+        const outputTitle = document.getElementById('outputTitle');
+        const prettyPrint = document.getElementById('prettyPrint');
+        const sortKeys = document.getElementById('sortKeys');
+        const errorBar = document.getElementById('errorBar');
+
+        const formatLabels = { json: 'JSON', yaml: 'YAML', toml: 'TOML', xml: 'XML' };
+
+        function updateTitles() {
+            inputTitle.textContent = '输入 (' + formatLabels[inputFormat.value] + ')';
+            outputTitle.textContent = '输出 (' + formatLabels[outputFormat.value] + ')';
+        }
+
+        inputFormat.addEventListener('change', updateTitles);
+        outputFormat.addEventListener('change', updateTitles);
+
+        document.getElementById('swapBtn').addEventListener('click', () => {
+            const temp = inputFormat.value;
+            inputFormat.value = outputFormat.value;
+            outputFormat.value = temp;
+            inputArea.value = outputArea.value;
+            outputArea.value = '';
+            updateTitles();
+            showToast('已交换输入输出');
+        });
+
+        document.getElementById('convertBtn').addEventListener('click', () => {
+            showError('');
+            try {
+                const data = parseInput(inputArea.value, inputFormat.value);
+                const result = stringifyOutput(data, outputFormat.value, prettyPrint.checked, sortKeys.checked);
+                outputArea.value = result;
+                showToast('转换成功', 'success');
+            } catch (e) {
+                showError('转换失败: ' + e.message);
+                showToast('转换失败', 'error');
+            }
+        });
+
+        document.getElementById('clearInput').addEventListener('click', () => {
+            inputArea.value = '';
+            showError('');
+            showToast('输入已清空');
+        });
+
+        document.getElementById('clearOutput').addEventListener('click', () => {
+            outputArea.value = '';
+            showToast('输出已清空');
+        });
+
+        document.getElementById('pasteInput').addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                inputArea.value = text;
+                showToast('已粘贴');
+            } catch (e) {
+                showToast('粘贴失败，请手动粘贴', 'error');
+            }
+        });
+
+        document.getElementById('copyOutput').addEventListener('click', async () => {
+            if (!outputArea.value) {
+                showToast('没有可复制的内容', 'error');
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(outputArea.value);
+                showToast('已复制到剪贴板', 'success');
+            } catch (e) {
+                showToast('复制失败', 'error');
+            }
+        });
+
+        document.getElementById('downloadOutput').addEventListener('click', () => {
+            if (!outputArea.value) {
+                showToast('没有可下载的内容', 'error');
+                return;
+            }
+            const extMap = { json: 'json', yaml: 'yaml', toml: 'toml', xml: 'xml' };
+            const ext = extMap[outputFormat.value];
+            const blob = new Blob([outputArea.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'output.' + ext;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('已下载 output.' + ext, 'success');
+        });
+
+        // ==================== Sample Data ====================
+        const samples = {
+            basic: {
+                name: 'Alice',
+                age: 30,
+                active: true,
+                score: 95.5
+            },
+            nested: {
+                user: {
+                    name: 'Bob',
+                    contact: {
+                        email: 'bob@example.com',
+                        phone: '1234567890'
+                    },
+                    address: {
+                        city: 'Beijing',
+                        zip: '100000'
+                    }
+                },
+                settings: {
+                    theme: 'dark',
+                    notifications: true
+                }
+            },
+            array: {
+                users: [
+                    { name: 'Alice', age: 25 },
+                    { name: 'Bob', age: 30 },
+                    { name: 'Charlie', age: 35 }
+                ],
+                tags: ['developer', 'designer', 'manager']
+            },
+            mixed: {
+                project: {
+                    name: 'WebApp',
+                    version: '1.0.0',
+                    dependencies: [
+                        { name: 'react', version: '^18.0.0' },
+                        { name: 'lodash', version: '^4.17.0' }
+                    ],
+                    config: {
+                        port: 3000,
+                        debug: false,
+                        features: ['auth', 'api', 'websocket']
+                    }
+                },
+                team: {
+                    lead: 'Alice',
+                    members: 5
+                }
+            }
+        };
+
+        document.querySelectorAll('[data-sample]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-sample');
+                const data = samples[key];
+                const fmt = inputFormat.value;
+                let text;
+                if (fmt === 'json') {
+                    text = JSON.stringify(data, null, 2);
+                } else if (fmt === 'yaml') {
+                    text = YAML.stringify(data);
+                } else if (fmt === 'toml') {
+                    text = TOML.stringify(data);
+                } else {
+                    text = XML.stringify(data, 'root');
+                }
+                inputArea.value = text;
+                showError('');
+                showToast('已加载示例: ' + btn.textContent);
+            });
+        });
+
+        // Auto-convert on paste / input with debounce
+        let debounceTimer;
+        inputArea.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (inputArea.value.trim()) {
+                    document.getElementById('convertBtn').click();
+                }
+            }, 800);
+        });
+
+        // Tab key support in textarea
+        inputArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = inputArea.selectionStart;
+                const end = inputArea.selectionEnd;
+                inputArea.value = inputArea.value.substring(0, start) + '  ' + inputArea.value.substring(end);
+                inputArea.selectionStart = inputArea.selectionEnd = start + 2;
+            }
+        });
+
+        // Init
+        updateTitles();
+    </script>
+</body>
+</html>
