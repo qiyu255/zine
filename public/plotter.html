@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-hans" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#282828" id="theme-color-meta">
+    <title>函数图像绘制器</title>
+    <meta name="description" content="二维直角坐标系函数图像绘制工具">
+    <script>
+        (function () {
+            const saved = localStorage.getItem('theme-preference');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let resolvedTheme;
+            let preference;
+
+            if (saved === 'dark' || saved === 'light' || saved === 'auto') {
+                preference = saved;
+            } else {
+                preference = 'auto';
+            }
+
+            if (preference === 'auto') {
+                resolvedTheme = systemDark ? 'dark' : 'light';
+            } else {
+                resolvedTheme = preference;
+            }
+
+            document.documentElement.setAttribute('data-theme', resolvedTheme);
+            document.documentElement.setAttribute('data-theme-preference', preference);
+
+            const meta = document.getElementById('theme-color-meta');
+            if (meta) {
+                meta.setAttribute('content', resolvedTheme === 'dark' ? '#282828' : '#fbf1c7');
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                "Helvetica Neue",
+                "Noto Sans",
+                "Liberation Sans",
+                "Apple Color Emoji",
+                "Segoe UI Emoji",
+                "Segoe UI Symbol",
+                "Noto Color Emoji",
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "WenQuanYi Micro Hei",
+                Arial,
+                sans-serif;
+
+            --font-family-monospace:
+                "JetBrains Mono",
+                "Liberation Mono",
+                "SF Mono",
+                Menlo,
+                Monaco,
+                Consolas,
+                "Source Han Sans VF",
+                "Microsoft YaHei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                monospace;
+
+            --transition-time: 0.2s;
+            --transition-time-slow: 0.3s;
+            --radius-sm: 2px;
+            --radius-md: 4px;
+            --breakpoint-sm: 576px;
+            --breakpoint-md: 768px;
+            --breakpoint-lg: 992px;
+            --breakpoint-xl: 1200px;
+
+            --color-primary: var(--green);
+            --color-secondary: var(--yellow);
+            --color-accent: var(--blue);
+            --color-success: var(--green);
+            --color-warning: var(--orange);
+            --color-error: var(--red);
+            --color-info: var(--blue);
+            --text-primary: var(--fg1);
+            --text-secondary: var(--fg-3);
+            --text-muted: var(--fg-4);
+            --text-inverse: var(--bg1);
+            --bg-body: var(--bg);
+            --bg-surface: var(--bg-s);
+            --bg-overlay: #0000007F;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.125rem;
+            --font-size-lg: 1.25rem;
+            --font-size-xl: 1.5rem;
+            font-size: 16px;
+        }
+
+        [data-theme="dark"] {
+            color-scheme: dark;
+            --bg_h: #1d2021;
+            --bg: #282828;
+            --bg_s: #32302f;
+            --bg1: #3c3836;
+            --bg2: #504945;
+            --bg3: #665c54;
+            --bg4: #7c6f64;
+            --fg: #fbf1c7;
+            --fg1: #ebdbb2;
+            --fg2: #d5c4a1;
+            --fg3: #bdae93;
+            --fg4: #a89984;
+            --red: #fb4934;
+            --green: #b8bb26;
+            --yellow: #fabd2f;
+            --blue: #83a598;
+            --purple: #d3869b;
+            --aqua: #8ec07c;
+            --gray: #928374;
+            --orange: #fe8019;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458588;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --gray-dim: #a89984;
+            --orange-dim: #d65d0e;
+        }
+
+        [data-theme="light"] {
+            color-scheme: light;
+            --bg_h: #f9f5d7;
+            --bg: #fbf1c7;
+            --bg_s: #f2e5bc;
+            --bg1: #ebdbb2;
+            --bg2: #d5c4a1;
+            --bg3: #bdae93;
+            --bg4: #a89984;
+            --fg: #282828;
+            --fg1: #3c3836;
+            --fg2: #504945;
+            --fg3: #665c54;
+            --fg4: #7c6f64;
+            --red: #9d0006;
+            --green: #79740e;
+            --yellow: #b57614;
+            --blue: #076678;
+            --purple: #8f3f71;
+            --aqua: #427b58;
+            --orange: #af3a03;
+            --gray: #928374;
+            --red-dim: #cc2412;
+            --green-dim: #98971a;
+            --yellow-dim: #d79921;
+            --blue-dim: #458598;
+            --purple-dim: #b16286;
+            --aqua-dim: #689d6a;
+            --orange-dim: #d65d0e;
+            --gray-dim: #7c6f64;
+        }
+
+        a {
+            color: var(--blue);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--blue-dim);
+        }
+
+        a:visited {
+            color: var(--blue);
+        }
+
+        a:active {
+            color: var(--blue);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部控制栏 */
+        .control-bar {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--bg2);
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .control-group + .control-group {
+            border-left: 1px solid var(--bg2);
+            padding-left: 0.75rem;
+            margin-left: 0.25rem;
+        }
+
+        /* 表单控件 */
+        input[type="text"],
+        input[type="number"] {
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 0.5rem;
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color var(--transition-time) ease, outline-color var(--transition-time) ease;
+            min-width: 0;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: var(--color-primary);
+            outline: 1px solid var(--color-primary);
+            outline-offset: -1px;
+        }
+
+        input[type="text"]::placeholder,
+        input[type="number"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* 描边风格按钮 */
+        .btn-outline {
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            background-color: transparent;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: background-color var(--transition-time) ease;
+            white-space: nowrap;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg2);
+        }
+
+        .btn-outline:active {
+            background-color: var(--bg3);
+        }
+
+        /* 文本风格按钮 */
+        .btn-text {
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            padding: 0.375rem 0.5rem;
+            border: none;
+            background: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: color var(--transition-time) ease;
+            white-space: nowrap;
+        }
+
+        .btn-text:hover {
+            color: var(--text-muted);
+        }
+
+        .btn-text:active {
+            color: var(--text-secondary);
+        }
+
+        .btn-text.danger {
+            color: var(--color-error);
+        }
+
+        .btn-text.danger:hover {
+            color: var(--red-dim);
+        }
+
+        /* 函数输入框 */
+        .func-input {
+            width: 12rem;
+        }
+
+        /* 函数列表 */
+        .func-list {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .func-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--bg3);
+            background-color: var(--bg-body);
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-xs);
+            cursor: pointer;
+            user-select: none;
+            transition: opacity var(--transition-time) ease, background-color var(--transition-time) ease;
+        }
+
+        .func-tag.hidden {
+            opacity: 0.4;
+        }
+
+        .func-tag:hover {
+            background-color: var(--bg-surface);
+        }
+
+        .func-tag .color-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .func-tag .func-name {
+            color: var(--text-primary);
+        }
+
+        /* 画布容器 */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+            background-color: var(--bg-body);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 坐标信息浮层 */
+        .coord-info {
+            position: absolute;
+            bottom: 0.5rem;
+            left: 0.5rem;
+            padding: 0.375rem 0.5rem;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--bg2);
+            border-radius: var(--radius-md);
+            font-family: var(--font-family-monospace);
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* 缩放控制 */
+        .zoom-controls {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .zoom-btn {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--bg3);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            font-family: var(--font-family-monospace);
+            cursor: pointer;
+            transition: background-color var(--transition-time) ease;
+        }
+
+        .zoom-btn:hover {
+            background-color: var(--bg2);
+        }
+
+        .zoom-btn:active {
+            background-color: var(--bg3);
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .control-bar {
+                padding: 0.375rem 0.5rem;
+            }
+
+            .func-input {
+                width: 8rem;
+            }
+
+            .control-group + .control-group {
+                padding-left: 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .func-input {
+                width: 100%;
+                flex: 1;
+            }
+
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            .control-group + .control-group {
+                border-left: none;
+                border-top: 1px solid var(--bg2);
+                padding-left: 0;
+                margin-left: 0;
+                padding-top: 0.375rem;
+                margin-top: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="control-bar">
+        <div class="control-group">
+            <input type="text" class="func-input" id="funcInput" placeholder="输入函数，如: x^2, sin(x)" autocomplete="off">
+            <button class="btn-outline" id="addBtn">添加</button>
+        </div>
+        <div class="control-group">
+            <div class="func-list" id="funcList"></div>
+        </div>
+        <div class="control-group" style="margin-left: auto;">
+            <button class="btn-text" id="resetBtn">重置视图</button>
+            <button class="btn-text danger" id="clearBtn">清空</button>
+        </div>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="plotCanvas"></canvas>
+        <div class="coord-info" id="coordInfo">x: 0, y: 0</div>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomIn">+</button>
+            <button class="zoom-btn" id="zoomOut">-</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('plotCanvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('canvasContainer');
+            const funcInput = document.getElementById('funcInput');
+            const addBtn = document.getElementById('addBtn');
+            const funcList = document.getElementById('funcList');
+            const resetBtn = document.getElementById('resetBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const coordInfo = document.getElementById('coordInfo');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+
+            // 颜色池
+            const colorVars = [
+                '--red', '--green', '--yellow', '--blue',
+                '--purple', '--aqua', '--orange', '--gray'
+            ];
+
+            // 状态
+            let functions = [];
+            let nextId = 1;
+            let offsetX = 0;
+            let offsetY = 0;
+            let scale = 50;
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let lastMouseX = 0;
+            let lastMouseY = 0;
+            let canvasWidth = 0;
+            let canvasHeight = 0;
+            let dpr = window.devicePixelRatio || 1;
+            let clickRefLine = null; // {x, y} 点击参考线坐标
+
+            // 触摸状态
+            let touches = [];
+            let lastTouchDist = 0;
+            let lastTouchCenter = { x: 0, y: 0 };
+
+            // 初始化画布尺寸
+            function resizeCanvas() {
+                const rect = container.getBoundingClientRect();
+                canvasWidth = rect.width;
+                canvasHeight = rect.height;
+                canvas.width = canvasWidth * dpr;
+                canvas.height = canvasHeight * dpr;
+                canvas.style.width = canvasWidth + 'px';
+                canvas.style.height = canvasHeight + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                draw();
+            }
+
+            // 获取CSS变量颜色值
+            function getColor(varName) {
+                return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+            }
+
+            // 坐标转换
+            function worldToScreen(wx, wy) {
+                return {
+                    x: canvasWidth / 2 + offsetX + wx * scale,
+                    y: canvasHeight / 2 + offsetY - wy * scale
+                };
+            }
+
+            function screenToWorld(sx, sy) {
+                return {
+                    x: (sx - canvasWidth / 2 - offsetX) / scale,
+                    y: -(sy - canvasHeight / 2 - offsetY) / scale
+                };
+            }
+
+            // 绘制网格和坐标轴
+            function drawGrid() {
+                const bg = getColor('--bg');
+                const bg2 = getColor('--bg2');
+                const fg4 = getColor('--fg4');
+                const fg2 = getColor('--fg2');
+                const fg = getColor('--fg');
+
+                ctx.fillStyle = bg;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // 计算网格间距（正方形，x和y使用同一间距）
+                const minGridSpacing = 40;
+                let gridStep = 1;
+                while (scale * gridStep < minGridSpacing) {
+                    gridStep *= 2;
+                }
+                while (scale * gridStep >= minGridSpacing * 2) {
+                    gridStep /= 2;
+                }
+
+                const startWorld = screenToWorld(0, 0);
+                const endWorld = screenToWorld(canvasWidth, canvasHeight);
+
+                const xStart = Math.floor(startWorld.x / gridStep) * gridStep;
+                const xEnd = Math.ceil(endWorld.x / gridStep) * gridStep;
+                const yStart = Math.floor(endWorld.y / gridStep) * gridStep;
+                const yEnd = Math.ceil(startWorld.y / gridStep) * gridStep;
+
+                // 绘制网格线（正方形网格，x和y同间距）
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = bg2;
+
+                for (let x = xStart; x <= xEnd; x += gridStep) {
+                    if (Math.abs(x) < 1e-10) continue;
+                    const s = worldToScreen(x, 0);
+                    ctx.beginPath();
+                    ctx.moveTo(s.x, 0);
+                    ctx.lineTo(s.x, canvasHeight);
+                    ctx.stroke();
+                }
+
+                for (let y = yStart; y <= yEnd; y += gridStep) {
+                    if (Math.abs(y) < 1e-10) continue;
+                    const s = worldToScreen(0, y);
+                    ctx.beginPath();
+                    ctx.moveTo(0, s.y);
+                    ctx.lineTo(canvasWidth, s.y);
+                    ctx.stroke();
+                }
+
+                // 坐标轴
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = fg4;
+
+                const origin = worldToScreen(0, 0);
+
+                // X轴
+                ctx.beginPath();
+                ctx.moveTo(0, origin.y);
+                ctx.lineTo(canvasWidth, origin.y);
+                ctx.stroke();
+
+                // Y轴
+                ctx.beginPath();
+                ctx.moveTo(origin.x, 0);
+                ctx.lineTo(origin.x, canvasHeight);
+                ctx.stroke();
+
+                // 刻度标签
+                const monoFont = getComputedStyle(document.documentElement).getPropertyValue('--font-family-monospace').trim();
+                ctx.font = '11px ' + monoFont;
+
+                // X轴刻度（在Y轴附近显示）
+                ctx.fillStyle = fg2;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                for (let x = xStart; x <= xEnd; x += gridStep) {
+                    if (Math.abs(x) < 1e-10) continue;
+                    const s = worldToScreen(x, 0);
+                    if (s.x < 0 || s.x > canvasWidth) continue;
+                    let label = Math.abs(x) >= 1000 ? x.toExponential(1) : parseFloat(x.toFixed(6)).toString();
+                    if (label.endsWith('.0')) label = label.slice(0, -2);
+                    // 标签显示在Y轴附近，避免被画布边缘截断
+                    let labelY = origin.y + 6;
+                    if (labelY > canvasHeight - 16) labelY = origin.y - 16;
+                    if (labelY < 4) labelY = 4;
+                    ctx.fillText(label, s.x, labelY);
+                }
+
+                // Y轴刻度（在X轴附近显示）
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                for (let y = yStart; y <= yEnd; y += gridStep) {
+                    if (Math.abs(y) < 1e-10) continue;
+                    const s = worldToScreen(0, y);
+                    if (s.y < 0 || s.y > canvasHeight) continue;
+                    let label = Math.abs(y) >= 1000 ? y.toExponential(1) : parseFloat(y.toFixed(6)).toString();
+                    if (label.endsWith('.0')) label = label.slice(0, -2);
+                    let labelX = origin.x - 6;
+                    if (labelX < 4) labelX = origin.x + 6;
+                    if (labelX > canvasWidth - 4) labelX = canvasWidth - 4;
+                    ctx.textAlign = labelX < origin.x ? 'right' : 'left';
+                    ctx.fillText(label, labelX, s.y);
+                }
+
+                // 原点标签
+                ctx.fillStyle = fg;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                let zeroX = origin.x - 4;
+                let zeroY = origin.y + 4;
+                if (zeroX < 2) { zeroX = origin.x + 4; ctx.textAlign = 'left'; }
+                if (zeroY > canvasHeight - 12) zeroY = origin.y - 12;
+                ctx.fillText('0', zeroX, zeroY);
+            }
+
+            // 绘制点击参考线
+            function drawClickRefLine() {
+                if (!clickRefLine) return;
+                const s = worldToScreen(clickRefLine.x, clickRefLine.y);
+                const color = getColor('--color-primary');
+                const fg3 = getColor('--fg3');
+
+                // 垂直参考线
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = color;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(s.x, 0);
+                ctx.lineTo(s.x, canvasHeight);
+                ctx.stroke();
+
+                // 水平参考线
+                ctx.beginPath();
+                ctx.moveTo(0, s.y);
+                ctx.lineTo(canvasWidth, s.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 交点圆点
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 坐标标签
+                const monoFont = getComputedStyle(document.documentElement).getPropertyValue('--font-family-monospace').trim();
+                ctx.font = '11px ' + monoFont;
+                ctx.fillStyle = fg3;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                let label = 'x=' + parseFloat(clickRefLine.x.toFixed(4)) + ', y=' + parseFloat(clickRefLine.y.toFixed(4));
+                let labelX = s.x + 8;
+                let labelY = s.y - 8;
+                if (labelX > canvasWidth - 120) labelX = s.x - 120;
+                if (labelY < 12) labelY = s.y + 16;
+                ctx.fillText(label, labelX, labelY);
+            }
+
+            // 解析数学表达式
+            function parseFunction(expr) {
+                let sanitized = expr
+                    .replace(/\^/g, '**')
+                    .replace(/\b(sin|cos|tan|asin|acos|atan|sinh|cosh|tanh|log|ln|exp|sqrt|abs|floor|ceil|round)\b/g, 'Math.$1')
+                    .replace(/\bpi\b/g, 'Math.PI')
+                    .replace(/\be\b/g, 'Math.E');
+
+                try {
+                    return new Function('x', 'return ' + sanitized);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            // 绘制函数
+            function drawFunctions() {
+                const step = 1 / scale;
+                const startWorld = screenToWorld(0, 0);
+                const endWorld = screenToWorld(canvasWidth, canvasHeight);
+                const xMin = startWorld.x - 1;
+                const xMax = endWorld.x + 1;
+
+                functions.forEach(function(func) {
+                    if (func.hidden || !func.fn) return;
+
+                    const color = getColor(func.colorVar);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+
+                    let firstPoint = true;
+                    let lastY = null;
+
+                    for (let wx = xMin; wx <= xMax; wx += step) {
+                        let wy;
+                        try {
+                            wy = func.fn(wx);
+                        } catch (e) {
+                            firstPoint = true;
+                            lastY = null;
+                            continue;
+                        }
+
+                        if (!isFinite(wy) || isNaN(wy)) {
+                            firstPoint = true;
+                            lastY = null;
+                            continue;
+                        }
+
+                        const s = worldToScreen(wx, wy);
+
+                        if (lastY !== null && Math.abs(wy - lastY) > 1000 / scale) {
+                            firstPoint = true;
+                        }
+
+                        if (firstPoint) {
+                            ctx.moveTo(s.x, s.y);
+                            firstPoint = false;
+                        } else {
+                            ctx.lineTo(s.x, s.y);
+                        }
+
+                        lastY = wy;
+                    }
+
+                    ctx.stroke();
+                });
+            }
+
+            // 主绘制函数
+            function draw() {
+                drawGrid();
+                drawFunctions();
+                drawClickRefLine();
+            }
+
+            // 添加函数
+            function addFunction() {
+                const expr = funcInput.value.trim();
+                if (!expr) return;
+
+                const fn = parseFunction(expr);
+                if (!fn) {
+                    alert('函数表达式无效');
+                    return;
+                }
+
+                try {
+                    fn(0);
+                } catch (e) {
+                    alert('函数表达式无效');
+                    return;
+                }
+
+                const colorVar = colorVars[(nextId - 1) % colorVars.length];
+                const func = {
+                    id: nextId++,
+                    expr: expr,
+                    fn: fn,
+                    colorVar: colorVar,
+                    hidden: false
+                };
+
+                functions.push(func);
+                funcInput.value = '';
+                renderFuncList();
+                draw();
+            }
+
+            // 渲染函数列表
+            function renderFuncList() {
+                funcList.innerHTML = '';
+                functions.forEach(function(func) {
+                    const tag = document.createElement('div');
+                    tag.className = 'func-tag' + (func.hidden ? ' hidden' : '');
+
+                    const dot = document.createElement('span');
+                    dot.className = 'color-dot';
+                    dot.style.backgroundColor = getColor(func.colorVar);
+
+                    const name = document.createElement('span');
+                    name.className = 'func-name';
+                    name.textContent = 'y=' + func.expr;
+
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'btn-text danger';
+                    delBtn.textContent = '删除';
+                    delBtn.style.fontSize = 'var(--font-size-xs)';
+                    delBtn.style.padding = '0 0.125rem';
+                    delBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        functions = functions.filter(function(f) { return f.id !== func.id; });
+                        renderFuncList();
+                        draw();
+                    });
+
+                    tag.appendChild(dot);
+                    tag.appendChild(name);
+                    tag.appendChild(delBtn);
+
+                    tag.addEventListener('click', function() {
+                        func.hidden = !func.hidden;
+                        renderFuncList();
+                        draw();
+                    });
+
+                    funcList.appendChild(tag);
+                });
+            }
+
+            // 缩放
+            function zoom(factor, centerX, centerY) {
+                const worldBefore = screenToWorld(centerX, centerY);
+                scale *= factor;
+                scale = Math.max(0.01, Math.min(10000, scale));
+                const worldAfter = screenToWorld(centerX, centerY);
+                offsetX += (worldAfter.x - worldBefore.x) * scale;
+                offsetY -= (worldAfter.y - worldBefore.y) * scale;
+                draw();
+            }
+
+            // 事件监听
+            addBtn.addEventListener('click', addFunction);
+            funcInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') addFunction();
+            });
+
+            resetBtn.addEventListener('click', function() {
+                offsetX = 0;
+                offsetY = 0;
+                scale = 50;
+                clickRefLine = null;
+                draw();
+            });
+
+            clearBtn.addEventListener('click', function() {
+                functions = [];
+                clickRefLine = null;
+                renderFuncList();
+                draw();
+            });
+
+            zoomInBtn.addEventListener('click', function() {
+                zoom(1.5, canvasWidth / 2, canvasHeight / 2);
+            });
+
+            zoomOutBtn.addEventListener('click', function() {
+                zoom(1 / 1.5, canvasWidth / 2, canvasHeight / 2);
+            });
+
+            // 鼠标事件
+            container.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                isDragging = false;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                container.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', function(e) {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const world = screenToWorld(x, y);
+                coordInfo.textContent = 'x: ' + world.x.toFixed(3) + ', y: ' + world.y.toFixed(3);
+
+                if (e.buttons !== 1) return;
+
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                if (Math.abs(e.clientX - dragStartX) > 3 || Math.abs(e.clientY - dragStartY) > 3) {
+                    isDragging = true;
+                }
+                offsetX += dx;
+                offsetY += dy;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                draw();
+            });
+
+            window.addEventListener('mouseup', function(e) {
+                container.style.cursor = 'crosshair';
+                if (e.button !== 0) return;
+
+                // 如果没有发生拖动，视为点击
+                if (!isDragging) {
+                    const rect = container.getBoundingClientRect();
+                    const sx = e.clientX - rect.left;
+                    const sy = e.clientY - rect.top;
+                    const world = screenToWorld(sx, sy);
+
+                    // 如果点击的是同一位置，移除；否则设置新参考线
+                    if (clickRefLine &&
+                        Math.abs(clickRefLine.x - world.x) < 1e-6 &&
+                        Math.abs(clickRefLine.y - world.y) < 1e-6) {
+                        clickRefLine = null;
+                    } else {
+                        clickRefLine = { x: world.x, y: world.y };
+                    }
+                    draw();
+                }
+                isDragging = false;
+            });
+
+            container.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                const rect = container.getBoundingClientRect();
+                const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+                zoom(factor, e.clientX - rect.left, e.clientY - rect.top);
+            }, { passive: false });
+
+            // 触摸事件
+            container.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                touches = Array.from(e.touches);
+
+                if (touches.length === 1) {
+                    isDragging = false;
+                    dragStartX = touches[0].clientX;
+                    dragStartY = touches[0].clientY;
+                    lastMouseX = touches[0].clientX;
+                    lastMouseY = touches[0].clientY;
+                } else if (touches.length === 2) {
+                    isDragging = false;
+                    const dx = touches[0].clientX - touches[1].clientX;
+                    const dy = touches[0].clientY - touches[1].clientY;
+                    lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+                    lastTouchCenter = {
+                        x: (touches[0].clientX + touches[1].clientX) / 2,
+                        y: (touches[0].clientY + touches[1].clientY) / 2
+                    };
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                touches = Array.from(e.touches);
+                const rect = container.getBoundingClientRect();
+
+                if (touches.length === 1) {
+                    const dx = touches[0].clientX - lastMouseX;
+                    const dy = touches[0].clientY - lastMouseY;
+                    if (Math.abs(touches[0].clientX - dragStartX) > 3 || Math.abs(touches[0].clientY - dragStartY) > 3) {
+                        isDragging = true;
+                    }
+                    offsetX += dx;
+                    offsetY += dy;
+                    lastMouseX = touches[0].clientX;
+                    lastMouseY = touches[0].clientY;
+                    draw();
+                } else if (touches.length === 2) {
+                    const dx = touches[0].clientX - touches[1].clientX;
+                    const dy = touches[0].clientY - touches[1].clientY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const center = {
+                        x: (touches[0].clientX + touches[1].clientX) / 2 - rect.left,
+                        y: (touches[0].clientY + touches[1].clientY) / 2 - rect.top
+                    };
+
+                    if (lastTouchDist > 0) {
+                        const factor = dist / lastTouchDist;
+                        if (factor > 0.9 && factor < 1.1) {
+                            const cdx = center.x - lastTouchCenter.x + rect.left;
+                            const cdy = center.y - lastTouchCenter.y + rect.top;
+                            offsetX += cdx;
+                            offsetY += cdy;
+                        } else {
+                            zoom(factor, center.x, center.y);
+                        }
+                    }
+
+                    lastTouchDist = dist;
+                    lastTouchCenter = {
+                        x: center.x + rect.left,
+                        y: center.y + rect.top
+                    };
+                }
+
+                if (touches.length > 0) {
+                    const x = touches[0].clientX - rect.left;
+                    const y = touches[0].clientY - rect.top;
+                    const world = screenToWorld(x, y);
+                    coordInfo.textContent = 'x: ' + world.x.toFixed(3) + ', y: ' + world.y.toFixed(3);
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', function(e) {
+                touches = Array.from(e.touches);
+                if (touches.length === 0) {
+                    if (!isDragging) {
+                        // 单点触摸结束且无拖动，视为点击
+                        // 使用最后一次touch位置
+                        const rect = container.getBoundingClientRect();
+                        const sx = lastMouseX - rect.left;
+                        const sy = lastMouseY - rect.top;
+                        const world = screenToWorld(sx, sy);
+                        if (clickRefLine &&
+                            Math.abs(clickRefLine.x - world.x) < 1e-6 &&
+                            Math.abs(clickRefLine.y - world.y) < 1e-6) {
+                            clickRefLine = null;
+                        } else {
+                            clickRefLine = { x: world.x, y: world.y };
+                        }
+                        draw();
+                    }
+                    isDragging = false;
+                    lastTouchDist = 0;
+                } else if (touches.length === 1) {
+                    isDragging = false;
+                    dragStartX = touches[0].clientX;
+                    dragStartY = touches[0].clientY;
+                    lastMouseX = touches[0].clientX;
+                    lastMouseY = touches[0].clientY;
+                    lastTouchDist = 0;
+                }
+            });
+
+            // 窗口大小变化
+            window.addEventListener('resize', resizeCanvas);
+
+            // 主题变化时重绘
+            const themeObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'data-theme') {
+                        draw();
+                        renderFuncList();
+                    }
+                });
+            });
+            themeObserver.observe(document.documentElement, { attributes: true });
+
+            // 初始化
+            resizeCanvas();
+
+            // 预置示例函数
+            const demoExpr = 'x**2';
+            const demoFn = parseFunction(demoExpr);
+            if (demoFn) {
+                functions.push({
+                    id: nextId++,
+                    expr: demoExpr,
+                    fn: demoFn,
+                    colorVar: colorVars[0],
+                    hidden: false
+                });
+                renderFuncList();
+                draw();
+            }
+        })();
+    </script>
+</body>
+</html>
