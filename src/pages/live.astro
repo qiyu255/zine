@@ -1,0 +1,28 @@
+---
+import { signal } from "@preact/signals";
+// Component Imports
+import Counter from "../components/Counter";
+
+// Full Astro Component Syntax:
+// https://docs.astro.build/basics/astro-components/
+
+const count = signal(0);
+
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import AnchorHeading from "@astrojs/starlight/components/AnchorHeading.astro";
+import CalendarMonthView from "../components/CalendarMonthView";
+import GridLayoutDemo from "../components/test";
+
+---
+
+<StarlightPage frontmatter={{ title: "Calendar " ,
+  template: 'splash',
+}} sidebar={[]}>
+<!-- <GridLayoutDemo /> -->
+ <div class="not-content base-transparent py-4">
+  <CalendarMonthView date={new Date(2026,5)} />
+
+ </div>
+</StarlightPage>
+
+

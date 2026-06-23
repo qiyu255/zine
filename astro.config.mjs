@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
+import preact from '@astrojs/preact';
+
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -20,6 +22,7 @@ let devConfig = {image: {
         service: passthroughImageService()
 }}
 if(isProd){
+    // @ts-ignore
     devConfig = {}
 }
 // https://astro.build/config
@@ -29,42 +32,40 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
   },
-  integrations: [
-    starlight({
-      title: 'My Docs',
-      locales: {
-        root: {
-          label: '简体中文',
-          lang: 'zh-CN',
-        }
+  integrations: [starlight({
+    title: 'My Docs',
+    locales: {
+      root: {
+        label: '简体中文',
+        lang: 'zh-CN',
+      }
+    },
+    social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+    sidebar: [
+      {
+        label: '文章',
+        items: [{ autogenerate: { directory: 'article' } }],
+
       },
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
-      sidebar: [
-        {
-          label: '文章',
-          items: [{ autogenerate: { directory: 'article' } }],
+      {
+        label: '笔记',
+        items: [{ autogenerate: { directory: 'note' } }],
 
-        },
-        {
-          label: '笔记',
-          items: [{ autogenerate: { directory: 'note' } }],
-
-        },
-        {
-          label: '指南',
-          items: [
-            // Each item here is one entry in the navigation menu.
-            { label: 'Example Guide', slug: 'guides/example' },
-          ],
-        },
-        {
-          label: '参考',
-          items: [{ autogenerate: { directory: 'reference' } }],
-        },
-      ],
-      customCss: ['./src/styles/global.css'],
-    }),
-  ],
+      },
+      {
+        label: '指南',
+        items: [
+          // Each item here is one entry in the navigation menu.
+          { label: 'Example Guide', slug: 'guides/example' },
+        ],
+      },
+      {
+        label: '参考',
+        items: [{ autogenerate: { directory: 'reference' } }],
+      },
+    ],
+    customCss: ['./src/styles/global.css'],
+  }), preact()],
   vite: {
     plugins: [tailwindcss()],
   },
