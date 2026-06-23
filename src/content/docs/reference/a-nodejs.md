@@ -4,7 +4,7 @@ title: js 并发任务脚本
 
 `````markdown
 实现一个nodejs 脚本, 目标版本 node 25 , esm，零外部依赖
-批量重复fetch http://example.com/random , 跟踪重定向到最后链接, 下载到saves目录，使用MD5(最后的实际链接)作为文件名，，解析path部分的扩展名作为扩展名，若没有扩展名，则根据内容类型推导出txt,json,bin,jpg(默认图片类型),png,webp,svg,gif,webm,ogg,mp3(默认音频类型),mp4(默认视频类型),
+
 使用下面的dispatcher控制并发，本地已有存在文件视为失败
 控制台美观输出运行情况
 
